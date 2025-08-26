@@ -178,9 +178,12 @@ export class MemStorage implements IStorage {
   async createIntern(insertIntern: InsertIntern): Promise<Intern> {
     const id = randomUUID();
     const intern: Intern = { 
-      ...insertIntern, 
+      ...insertIntern,
       id, 
       createdAt: new Date(),
+      progress: insertIntern.progress ?? 0,
+      isActive: insertIntern.isActive ?? true,
+      offerLetterUrl: insertIntern.offerLetterUrl ?? null,
     };
     this.interns.set(id, intern);
     return intern;
@@ -215,6 +218,10 @@ export class MemStorage implements IStorage {
       id, 
       createdAt: new Date(),
       completedAt: null,
+      priority: insertTask.priority ?? "medium",
+      status: insertTask.status ?? "todo",
+      dueDate: insertTask.dueDate ?? null,
+      assignedTo: insertTask.assignedTo ?? null,
     };
     this.tasks.set(id, task);
     return task;
@@ -254,6 +261,11 @@ export class MemStorage implements IStorage {
       ...insertMeeting, 
       id, 
       createdAt: new Date(),
+      description: insertMeeting.description ?? null,
+      duration: insertMeeting.duration ?? "1 hour",
+      platform: insertMeeting.platform ?? "Google Meet",
+      meetingLink: insertMeeting.meetingLink ?? null,
+      attendees: insertMeeting.attendees ?? null,
     };
     this.meetings.set(id, meeting);
     return meeting;
@@ -287,6 +299,9 @@ export class MemStorage implements IStorage {
       ...insertCertificate, 
       id, 
       createdAt: new Date(),
+      issuedDate: insertCertificate.issuedDate ?? null,
+      certificateUrl: insertCertificate.certificateUrl ?? null,
+      isGenerated: insertCertificate.isGenerated ?? false,
     };
     this.certificates.set(id, certificate);
     return certificate;
@@ -320,6 +335,8 @@ export class MemStorage implements IStorage {
       ...insertNotification, 
       id, 
       createdAt: new Date(),
+      internId: insertNotification.internId ?? null,
+      isRead: insertNotification.isRead ?? false,
     };
     this.notifications.set(id, notification);
     return notification;
