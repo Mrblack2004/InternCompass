@@ -1,0 +1,32 @@
+[
+  {
+    "username": "intern001",
+    "password": "intern123",
+    "name": "Sarah Johnson",
+    "email": "sarah.johnson@company.com",
+    "mobileNumber": "+1234567890",
+    "department": "Software Engineering",
+    "startDate": "2024-06-01",
+    "endDate": "2024-08-30"
+  },
+  {
+    "username": "intern002",
+    "password": "john123",
+    "name": "John Smith",
+    "email": "john.smith@company.com",
+    "mobileNumber": "+1987654321",
+    "department": "Marketing",
+    "startDate": "2024-07-01",
+    "endDate": "2024-09-30"
+  },
+  {
+    "username": "intern003",
+    "password": "alice123",
+    "name": "Alice Wilson",
+    "email": "alice.wilson@company.com",
+    "mobileNumber": "+1122334455",
+    "department": "Human Resources",
+    "startDate": "2024-05-15",
+    "endDate": "2024-08-15"
+  }
+]

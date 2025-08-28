@@ -1,6 +1,35 @@
 # Overview
 
-This is a full-stack internship management system built with React, Express, and PostgreSQL. The application provides two interfaces: an intern dashboard for tracking progress, tasks, and meetings, and an admin dashboard for managing all interns, tasks, meetings, and certificates. The system features real-time notifications, progress tracking, certificate generation, and comprehensive CRUD operations for all entities.
+This is a full-stack internship management system built with React, Express, and PostgreSQL. The application provides two interfaces: an intern dashboard for tracking progress, tasks, and meetings, and an admin dashboard for managing all interns, tasks, meetings, and certificates. The system features Excel sheet integration for data import, automated progress tracking based on task completion and attendance, automatic certificate generation, and real-time notifications.
+
+## Excel Sheet Integration
+
+The system now imports data from Excel sheets placed in the `excel-templates/` folder:
+
+### Required Excel Files Structure:
+
+**For Interns (`interns.json` or `interns.xlsx`):**
+- username (unique identifier)
+- password (login credential)
+- name (full name)
+- email (contact email)
+- mobileNumber (with country code)
+- department (work department)
+- startDate (YYYY-MM-DD format)
+- endDate (YYYY-MM-DD format)
+
+**For Admins (`admins.json` or `admins.xlsx`):**
+- username (unique identifier)
+- password (login credential)
+- name (full name)
+- email (contact email)
+- role (job title/role)
+
+### Upload Process:
+1. Place Excel files in `excel-templates/` folder
+2. Name them `interns.json` and `admins.json` (JSON format currently supported)
+3. Restart the application to import data
+4. System validates and imports only new records
 
 # User Preferences
 
