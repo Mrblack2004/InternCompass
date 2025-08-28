@@ -19,18 +19,21 @@ export default function Login() {
     }
 
     if (userType === "admin") {
-      if (password === "admin123") {
+      if (username === "admin" && password === "admin123") {
         localStorage.setItem("userType", "admin");
         localStorage.setItem("username", username);
         setLocation("/admin");
       } else {
-        setError("Invalid admin password");
+        setError("Invalid admin credentials. Use: admin / admin123");
       }
     } else {
-      // For interns, accept any username/password combination
-      localStorage.setItem("userType", "intern");
-      localStorage.setItem("username", username);
-      setLocation("/intern");
+      if (username === "intern" && password === "intern123") {
+        localStorage.setItem("userType", "intern");
+        localStorage.setItem("username", username);
+        setLocation("/intern");
+      } else {
+        setError("Invalid intern credentials. Use: intern / intern123");
+      }
     }
   };
 
@@ -72,7 +75,10 @@ export default function Login() {
             {userType === "admin" ? "Admin Login" : "Intern Login"}
           </CardTitle>
           <CardDescription>
-            Enter your credentials to access the dashboard
+            {userType === "admin" 
+              ? "Username: admin, Password: admin123" 
+              : "Username: intern, Password: intern123"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
