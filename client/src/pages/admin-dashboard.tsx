@@ -39,10 +39,6 @@ export default function AdminDashboard() {
     return titles[activeTab as keyof typeof titles] || titles["admin-overview"];
   };
 
-  const handleModeChange = () => {
-    setLocation("/");
-  };
-
   const pageInfo = getPageInfo();
 
   return (
@@ -51,7 +47,6 @@ export default function AdminDashboard() {
         mode="admin"
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onModeChange={handleModeChange}
       />
       
       <div className="flex-1 flex flex-col overflow-hidden">

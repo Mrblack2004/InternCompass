@@ -1,25 +1,14 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
 interface SidebarProps {
   mode: "intern" | "admin";
   activeTab: string;
   onTabChange: (tab: string) => void;
-  onModeChange: () => void;
 }
 
-export default function Sidebar({ mode, activeTab, onTabChange, onModeChange }: SidebarProps) {
-  const [showAdminModal, setShowAdminModal] = useState(false);
-  const [adminPassword, setAdminPassword] = useState("");
+export default function Sidebar({ mode, activeTab, onTabChange }: SidebarProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -38,38 +27,20 @@ export default function Sidebar({ mode, activeTab, onTabChange, onModeChange }: 
     { id: "admin-certificates", icon: "fas fa-award", label: "Certificates" },
   ];
 
-  const handleModeToggle = () => {
-    if (mode === "intern") {
-      setShowAdminModal(true);
-    } else {
-      onModeChange();
-    }
-  };
-
-  const handleAdminLogin = () => {
-    // Simple password check - in real app would be proper authentication
-    if (adminPassword === "admin123") {
-      setShowAdminModal(false);
-      setAdminPassword("");
-      setLocation("/admin");
-      toast({
-        title: "Admin access granted",
-        description: "Welcome to the admin dashboard",
-      });
-    } else {
-      toast({
-        title: "Invalid password",
-        description: "Please enter the correct admin password",
-        variant: "destructive",
-      });
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("userType");
+    localStorage.removeItem("username");
+    setLocation("/");
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of the system",
+    });
   };
 
   const navItems = mode === "intern" ? internNavItems : adminNavItems;
 
   return (
-    <>
-      <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
+    <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
         {/* Logo */}
         <div className="p-6 border-b border-slate-200">
           <div className="flex items-center gap-3">
@@ -101,54 +72,17 @@ export default function Sidebar({ mode, activeTab, onTabChange, onModeChange }: 
           </div>
         </nav>
 
-        {/* Mode Switch */}
+        {/* Logout */}
         <div className="p-4 border-t border-slate-200">
           <button
-            data-testid="button-mode-toggle"
-            onClick={handleModeToggle}
+            data-testid="button-logout"
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
           >
-            <i className="fas fa-cog w-5"></i>
-            <span>{mode === "intern" ? "Admin Mode" : "Intern Mode"}</span>
+            <i className="fas fa-sign-out-alt w-5"></i>
+            <span>Logout</span>
           </button>
         </div>
       </div>
-
-      {/* Admin Password Modal */}
-      <Dialog open={showAdminModal} onOpenChange={setShowAdminModal}>
-        <DialogContent data-testid="modal-admin-login">
-          <DialogHeader>
-            <DialogTitle>Admin Access</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              data-testid="input-admin-password"
-              type="password"
-              placeholder="Enter admin password"
-              value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAdminLogin()}
-            />
-            <div className="flex gap-3">
-              <Button
-                data-testid="button-cancel-admin"
-                variant="outline"
-                onClick={() => setShowAdminModal(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                data-testid="button-admin-login"
-                onClick={handleAdminLogin}
-                className="flex-1"
-              >
-                Access
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
   );
 }

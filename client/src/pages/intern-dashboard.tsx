@@ -50,7 +50,6 @@ export default function InternDashboard() {
         mode="intern"
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onModeChange={() => {}}
       />
       
       <div className="flex-1 flex flex-col overflow-hidden">
