@@ -4,9 +4,17 @@ import { storage } from "./storage";
 import { insertInternSchema, insertTaskSchema, insertMeetingSchema, insertCertificateSchema, insertNotificationSchema } from "@shared/schema";
 import { ProgressCalculator } from "./progress-calculator";
 import { importExcelData } from "./excel-import";
+import multer from "multer";
+import * as XLSX from "xlsx";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure multer for file uploads
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  });
+
   // Import Excel data on startup
   await importExcelData();
 
@@ -21,6 +29,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(intern);
     } catch (error) {
       res.status(500).json({ message: "Authentication failed" });
+    }
+  });
+
+  // Excel upload route
+  app.post("/api/upload-excel", upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const { type } = req.body;
+      if (!type || !["intern", "admin"].includes(type)) {
+        return res.status(400).json({ message: "Invalid upload type" });
+      }
+
+      // Parse Excel file
+      const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet);
+
+      let importedCount = 0;
+
+      if (type === "intern") {
+        for (const row of data) {
+          try {
+            const rowData = row as any;
+            const internData = {
+              username: rowData.username || rowData.Username,
+              password: rowData.password || rowData.Password,
+              name: rowData.name || rowData.Name,
+              email: rowData.email || rowData.Email,
+              mobileNumber: rowData.mobileNumber || rowData.MobileNumber || rowData.mobile || rowData.Mobile || "",
+              department: rowData.department || rowData.Department || "General",
+              startDate: rowData.startDate || rowData.StartDate || "2024-01-01",
+              endDate: rowData.endDate || rowData.EndDate || "2024-12-31",
+            };
+
+            // Validate required fields
+            if (!internData.username || !internData.password || !internData.name || !internData.email) {
+              console.warn("Skipping row - missing required fields:", rowData);
+              continue;
+            }
+
+            // Check if intern already exists
+            const existingIntern = await storage.getInternByUsername(internData.username);
+            if (!existingIntern) {
+              await storage.createIntern({
+                ...internData,
+                profilePhoto: null,
+                progress: 0,
+                isActive: true,
+                attendanceCount: 0,
+              });
+              importedCount++;
+              console.log(`✓ Imported intern: ${internData.name} (${internData.username})`);
+            }
+          } catch (error) {
+            console.error("Failed to import intern row:", error);
+          }
+        }
+      }
+
+      res.json({ 
+        message: `Successfully imported ${importedCount} ${type} records`,
+        count: importedCount 
+      });
+    } catch (error) {
+      console.error("Excel upload error:", error);
+      res.status(500).json({ message: "Failed to process Excel file" });
     }
   });
 

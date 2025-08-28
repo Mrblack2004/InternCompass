@@ -91,6 +91,10 @@ export default function Login() {
               ? "Username: admin, Password: admin123" 
               : "Use credentials from Excel sheet"
             }
+            <br />
+            <a href="/upload" className="text-blue-600 hover:underline text-sm">
+              Upload Excel Files Here
+            </a>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

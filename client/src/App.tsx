@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "@/pages/login";
 import InternDashboard from "@/pages/intern-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
+import ExcelUpload from "@/pages/excel-upload";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Login}/>
       <Route path="/intern" component={InternDashboard}/>
       <Route path="/admin" component={AdminDashboard}/>
+      <Route path="/upload" component={ExcelUpload}/>
       <Route component={NotFound} />
     </Switch>
   );
