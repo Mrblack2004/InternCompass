@@ -5,14 +5,18 @@ import { z } from "zod";
 
 export const interns = pgTable("interns", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
+  mobileNumber: text("mobile_number").notNull(),
   department: text("department").notNull(),
+  profilePhoto: text("profile_photo"),
   startDate: text("start_date").notNull(),
   endDate: text("end_date").notNull(),
   progress: integer("progress").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
-  offerLetterUrl: text("offer_letter_url"),
+  attendanceCount: integer("attendance_count").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

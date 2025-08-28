@@ -12,7 +12,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [, setLocation] = useLocation();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!username || !password) {
       setError("Please enter both username and password");
       return;
@@ -27,12 +27,24 @@ export default function Login() {
         setError("Invalid admin credentials. Use: admin / admin123");
       }
     } else {
-      if (username === "intern" && password === "intern123") {
-        localStorage.setItem("userType", "intern");
-        localStorage.setItem("username", username);
-        setLocation("/intern");
-      } else {
-        setError("Invalid intern credentials. Use: intern / intern123");
+      try {
+        const response = await fetch("/api/interns/authenticate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (response.ok) {
+          const intern = await response.json();
+          localStorage.setItem("userType", "intern");
+          localStorage.setItem("username", username);
+          localStorage.setItem("internId", intern.id);
+          setLocation("/intern");
+        } else {
+          setError("Invalid intern credentials");
+        }
+      } catch (error) {
+        setError("Login failed. Please try again.");
       }
     }
   };
@@ -77,7 +89,7 @@ export default function Login() {
           <CardDescription>
             {userType === "admin" 
               ? "Username: admin, Password: admin123" 
-              : "Username: intern, Password: intern123"
+              : "Use credentials from Excel sheet"
             }
           </CardDescription>
         </CardHeader>

@@ -9,7 +9,7 @@ import type { Notification } from "@shared/schema";
 
 export default function InternDashboard() {
   const [activeTab, setActiveTab] = useState("profile");
-  const currentInternId = "intern-1"; // In a real app, this would come from auth
+  const currentInternId = localStorage.getItem("internId") || "intern-1";
 
   const { data: notifications = [] } = useQuery<Notification[]>({
     queryKey: ["/api/notifications/intern", currentInternId],

@@ -2,9 +2,49 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertInternSchema, insertTaskSchema, insertMeetingSchema, insertCertificateSchema, insertNotificationSchema } from "@shared/schema";
+import { ProgressCalculator } from "./progress-calculator";
+import { importExcelData } from "./excel-import";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Import Excel data on startup
+  await importExcelData();
+
+  // Authentication routes
+  app.post("/api/interns/authenticate", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      const intern = await storage.authenticateIntern(username, password);
+      if (!intern) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      res.json(intern);
+    } catch (error) {
+      res.status(500).json({ message: "Authentication failed" });
+    }
+  });
+
+  // Attendance routes
+  app.post("/api/interns/:id/attendance", async (req, res) => {
+    try {
+      const intern = await storage.getIntern(req.params.id);
+      if (!intern) {
+        return res.status(404).json({ message: "Intern not found" });
+      }
+      
+      const updatedIntern = await storage.updateIntern(req.params.id, {
+        attendanceCount: intern.attendanceCount + 1
+      });
+      
+      // Recalculate progress after attendance update
+      await ProgressCalculator.calculateInternProgress(req.params.id);
+      
+      res.json(updatedIntern);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update attendance" });
+    }
+  });
+
   // Intern routes
   app.get("/api/interns", async (req, res) => {
     try {
@@ -107,6 +147,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!task) {
         return res.status(404).json({ message: "Task not found" });
       }
+      
+      // Recalculate progress and check certificate eligibility when task is completed
+      if (task.assignedTo && partialData.status === "completed") {
+        await ProgressCalculator.calculateInternProgress(task.assignedTo);
+        await ProgressCalculator.generateCertificateIfEligible(task.assignedTo);
+      }
+      
       res.json(task);
     } catch (error) {
       if (error instanceof z.ZodError) {

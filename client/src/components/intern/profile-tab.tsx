@@ -65,10 +65,10 @@ export default function ProfileTab({ internId }: ProfileTabProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Internship Duration
+                      Mobile Number
                     </label>
-                    <p data-testid="intern-duration" className="text-slate-900">
-                      {intern.startDate} to {intern.endDate}
+                    <p data-testid="intern-mobile" className="text-slate-900">
+                      {intern.mobileNumber}
                     </p>
                   </div>
                   <div>
@@ -77,6 +77,22 @@ export default function ProfileTab({ internId }: ProfileTabProps) {
                     </label>
                     <p data-testid="intern-department" className="text-slate-900">
                       {intern.department}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Internship Duration
+                    </label>
+                    <p data-testid="intern-duration" className="text-slate-900">
+                      {intern.startDate} to {intern.endDate}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Attendance Days
+                    </label>
+                    <p data-testid="intern-attendance" className="text-slate-900">
+                      {intern.attendanceCount} days
                     </p>
                   </div>
                 </div>
@@ -123,29 +139,7 @@ export default function ProfileTab({ internId }: ProfileTabProps) {
           </CardContent>
         </Card>
 
-        {/* Offer Letter */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Documents</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-file-pdf text-red-600"></i>
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-slate-800">Offer Letter</p>
-                <p className="text-sm text-slate-600">Uploaded on {intern.startDate}</p>
-              </div>
-              <Button 
-                variant="outline"
-                data-testid="button-download-offer-letter"
-              >
-                <i className="fas fa-download mr-2"></i>Download
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
     </div>
   );
