@@ -26,25 +26,15 @@ export default function Login() {
       } else {
         setError("Invalid admin credentials. Use: admin / admin123");
       }
-    } else {
-      try {
-        const response = await fetch("/api/interns/authenticate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        });
-
-        if (response.ok) {
-          const intern = await response.json();
-          localStorage.setItem("userType", "intern");
-          localStorage.setItem("username", username);
-          localStorage.setItem("internId", intern.id);
-          setLocation("/intern");
-        } else {
-          setError("Invalid intern credentials");
-        }
-      } catch (error) {
-        setError("Login failed. Please try again.");
+    } else if (userType === "intern") {
+      // Handle intern login with hardcoded credentials
+      if (username === "intern" && password === "intern123") {
+        localStorage.setItem("userType", "intern");
+        localStorage.setItem("username", username);
+        localStorage.setItem("internId", "intern_001"); // Mock intern ID
+        setLocation("/intern");
+      } else {
+        setError("Invalid intern credentials. Use: intern / intern123");
       }
     }
   };
@@ -89,7 +79,7 @@ export default function Login() {
           <CardDescription>
             {userType === "admin" 
               ? "Username: admin, Password: admin123" 
-              : "Use credentials from Excel sheet"
+              : "Username: intern, Password: intern123"
             }
             <br />
             <a href="/upload" className="text-blue-600 hover:underline text-sm">

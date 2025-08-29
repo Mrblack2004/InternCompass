@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Tracking & Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#3B82F6',
+                        'secondary': '#6366F1',
+                        'success': '#10B981',
+                        'warning': '#F59E0B',
+                        'danger': '#EF4444',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 font-inter">
+    <!-- @COMPONENT: NotificationContainer -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2">
+        <!-- Notifications will be inserted here dynamically -->
+    </div>
+    <!-- @END_COMPONENT: NotificationContainer -->
+
+    <!-- @COMPONENT: AdminPasswordModal -->
+    <div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h2 class="text-xl font-semibold text-slate-800 mb-4">Admin Access</h2>
+            <input 
+                type="password" 
+                id="adminPassword"
+                placeholder="Enter admin password"
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+            >
+            <div class="flex gap-3 mt-4">
+                <button onclick="closeAdminModal()" class="flex-1 px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="adminLogin()" class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                    Access
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: AdminPasswordModal -->
+
+    <div class="flex h-screen">
+        <!-- @COMPONENT: Sidebar -->
+        <div id="sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col">
+            <!-- Logo -->
+            <div class="p-6 border-b border-slate-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-white text-sm"></i>
+                    </div>
+                    <h1 class="text-lg font-semibold text-slate-800">InternTrack</h1>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 p-4">
+                <div class="space-y-2" id="navigationMenu">
+                    <!-- Intern Navigation (Default) -->
+                    <div id="internNav">
+                        <a href="#" onclick="showTab('profile')" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-user w-5"></i>
+                            <span>Profile</span>
+                        </a>
+                        <a href="#" onclick="showTab('tasks')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-tasks w-5"></i>
+                            <span>Tasks</span>
+                        </a>
+                        <a href="#" onclick="showTab('meetings')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-calendar w-5"></i>
+                            <span>Meetings</span>
+                        </a>
+                        <a href="#" onclick="showTab('certificate')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-certificate w-5"></i>
+                            <span>Certificate</span>
+                        </a>
+                    </div>
+
+                    <!-- Admin Navigation (Hidden by default) -->
+                    <div id="adminNav" class="hidden">
+                        <a href="#" onclick="showTab('admin-overview')" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-tachometer-alt w-5"></i>
+                            <span>Overview</span>
+                        </a>
+                        <a href="#" onclick="showTab('admin-interns')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-users w-5"></i>
+                            <span>All Interns</span>
+                        </a>
+                        <a href="#" onclick="showTab('admin-tasks')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-clipboard-list w-5"></i>
+                            <span>Task Management</span>
+                        </a>
+                        <a href="#" onclick="showTab('admin-meetings')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-video w-5"></i>
+                            <span>Meetings</span>
+                        </a>
+                        <a href="#" onclick="showTab('admin-certificates')" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-award w-5"></i>
+                            <span>Certificates</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Mode Switch -->
+            <div class="p-4 border-t border-slate-200">
+                <button 
+                    id="modeToggle" 
+                    onclick="toggleMode()" 
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                    <i class="fas fa-cog w-5"></i>
+                    <span>Admin Mode</span>
+                </button>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden"></div>
+
+        <!-- @COMPONENT: MainContent -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white border-b border-slate-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <button id="mobileMenuToggle" class="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div>
+                            <h2 id="pageTitle" class="text-xl font-semibold text-slate-800">Profile</h2>
+                            <p id="pageSubtitle" class="text-sm text-slate-600">Manage your internship profile</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <!-- Notification Bell -->
+                        <button class="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                            <i class="fas fa-bell"></i>
+                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-danger text-white text-xs rounded-full flex items-center justify-center">3</span>
+                        </button>
+                        <!-- User Avatar -->
+                        <div class="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-slate-600 text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <main class="flex-1 overflow-y-auto">
+                <!-- @COMPONENT: ProfileTab -->
+                <div id="profile" class="tab-content p-6">
+                    <div class="max-w-4xl mx-auto space-y-6">
+                        <!-- Profile Card -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="flex-shrink-0">
+                                    <div class="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user text-slate-500 text-2xl"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-xl font-semibold text-slate-800" data-bind="intern.name">Sarah Johnson</h3>
+                                    <p class="text-slate-600" data-bind="intern.email">sarah.johnson@email.com</p>
+                                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Internship Duration</label>
+                                            <p class="text-slate-900" data-bind="intern.duration">3 months (Jun - Aug 2024)</p>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Department</label>
+                                            <p class="text-slate-900" data-bind="intern.department">Software Development</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progress Overview -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">Progress Overview</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-2">
+                                        <span class="font-medium text-slate-700">Overall Progress</span>
+                                        <span class="text-slate-600" data-bind="intern.progress">65%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 rounded-full h-2">
+                                        <div class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 65%"></div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                                    <div class="text-center p-4 bg-slate-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-primary" data-bind="stats.completedTasks">8</div>
+                                        <div class="text-sm text-slate-600">Tasks Completed</div>
+                                    </div>
+                                    <div class="text-center p-4 bg-slate-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-warning" data-bind="stats.activeTasks">4</div>
+                                        <div class="text-sm text-slate-600">Active Tasks</div>
+                                    </div>
+                                    <div class="text-center p-4 bg-slate-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-success" data-bind="stats.meetingsAttended">12</div>
+                                        <div class="text-sm text-slate-600">Meetings Attended</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Offer Letter -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">Documents</h3>
+                            <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
+                                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-file-pdf text-red-600"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-medium text-slate-800">Offer Letter</p>
+                                    <p class="text-sm text-slate-600">Uploaded on June 1, 2024</p>
+                                </div>
+                                <button class="px-4 py-2 text-primary border border-primary rounded-lg hover:bg-blue-50 transition-colors">
+                                    <i class="fas fa-download mr-2"></i>Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: ProfileTab -->
+
+                <!-- @COMPONENT: TasksTab -->
+                <div id="tasks" class="tab-content hidden p-6">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                            <div class="flex-1">
+                                <div class="flex gap-2">
+                                    <button onclick="filterTasks('all')" class="task-filter active px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                        All Tasks
+                                    </button>
+                                    <button onclick="filterTasks('todo')" class="task-filter px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+                                        To Do
+                                    </button>
+                                    <button onclick="filterTasks('progress')" class="task-filter px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+                                        In Progress
+                                    </button>
+                                    <button onclick="filterTasks('completed')" class="task-filter px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+                                        Completed
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4" id="tasksList">
+                            <!-- @MAP: tasks.map(task => ( -->
+                            <div class="task-item bg-white rounded-xl shadow-sm border border-slate-200 p-6" data-status="todo">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <button class="task-checkbox w-5 h-5 border-2 border-slate-300 rounded hover:border-primary transition-colors" data-implementation="Toggle task status">
+                                            <i class="fas fa-check text-white text-xs opacity-0"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-slate-800 mb-2">Build User Authentication System</h3>
+                                        <p class="text-slate-600 text-sm mb-3">Implement user login and registration functionality using JWT tokens and secure password hashing.</p>
+                                        <div class="flex flex-wrap items-center gap-3">
+                                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">To Do</span>
+                                            <span class="text-xs text-slate-500">Due: July 15, 2024</span>
+                                            <span class="text-xs text-slate-500">Priority: High</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="task-item bg-white rounded-xl shadow-sm border border-slate-200 p-6" data-status="progress">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <button class="task-checkbox w-5 h-5 bg-primary border-2 border-primary rounded hover:border-blue-600 transition-colors">
+                                            <i class="fas fa-spinner fa-spin text-white text-xs"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-slate-800 mb-2">Design Database Schema</h3>
+                                        <p class="text-slate-600 text-sm mb-3">Create comprehensive database design for the application including user management and data relationships.</p>
+                                        <div class="flex flex-wrap items-center gap-3">
+                                            <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">In Progress</span>
+                                            <span class="text-xs text-slate-500">Due: July 10, 2024</span>
+                                            <span class="text-xs text-slate-500">Priority: Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="task-item bg-white rounded-xl shadow-sm border border-slate-200 p-6" data-status="completed">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <button class="task-checkbox w-5 h-5 bg-success border-2 border-success rounded">
+                                            <i class="fas fa-check text-white text-xs"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-slate-800 mb-2 line-through text-slate-500">Setup Development Environment</h3>
+                                        <p class="text-slate-600 text-sm mb-3">Install and configure all necessary development tools, IDEs, and project dependencies.</p>
+                                        <div class="flex flex-wrap items-center gap-3">
+                                            <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Completed</span>
+                                            <span class="text-xs text-slate-500">Completed: June 8, 2024</span>
+                                            <span class="text-xs text-slate-500">Priority: High</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: TasksTab -->
+
+                <!-- @COMPONENT: MeetingsTab -->
+                <div id="meetings" class="tab-content hidden p-6">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                            <h2 class="text-lg font-semibold text-slate-800">Upcoming Meetings</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- @MAP: meetings.map(meeting => ( -->
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-slate-800 mb-2">Weekly Progress Review</h3>
+                                        <p class="text-slate-600 text-sm mb-3">Discuss current project status, challenges, and upcoming milestones with the team lead.</p>
+                                        <div class="flex flex-wrap items-center gap-4">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-calendar-alt text-slate-400"></i>
+                                                <span class="text-sm text-slate-600">July 8, 2024</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-clock text-slate-400"></i>
+                                                <span class="text-sm text-slate-600">2:00 PM - 3:00 PM</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-users text-slate-400"></i>
+                                                <span class="text-sm text-slate-600">John Smith, Sarah Johnson</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <a href="#" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                            <i class="fas fa-video mr-2"></i>Join Meeting
+                                        </a>
+                                        <button class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                                            <i class="fas fa-calendar-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-slate-800 mb-2">Project Kickoff Meeting</h3>
+                                        <p class="text-slate-600 text-sm mb-3">Introduction to the new project requirements and team collaboration guidelines.</p>
+                                        <div class="flex flex-wrap items-center gap-4">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-calendar-alt text-slate-400"></i>
+                                                <span class="text-sm text-slate-600">July 12, 2024</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-clock text-slate-400"></i>
+                                                <span class="text-sm text-slate-600">10:00 AM - 11:30 AM</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-users text-slate-400"></i>
+                                                <span class="text-sm text-slate-600">Development Team</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <a href="#" class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-indigo-600 transition-colors">
+                                            <i class="fab fa-google mr-2"></i>Google Meet
+                                        </a>
+                                        <button class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                                            <i class="fas fa-calendar-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 opacity-60">
+                                <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-slate-800 mb-2">Mid-term Evaluation</h3>
+                                        <p class="text-slate-600 text-sm mb-3">Performance review and feedback session with HR and supervisor.</p>
+                                        <div class="flex flex-wrap items-center gap-4">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-calendar-alt text-slate-400"></i>
+                                                <span class="text-sm text-slate-600">July 15, 2024</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-clock text-slate-400"></i>
+                                                <span class="text-sm text-slate-600">3:00 PM - 4:00 PM</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-users text-slate-400"></i>
+                                                <span class="text-sm text-slate-600">HR Team</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button disabled class="px-4 py-2 bg-slate-200 text-slate-400 rounded-lg cursor-not-allowed">
+                                            <i class="fas fa-video mr-2"></i>Scheduled
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: MeetingsTab -->
+
+                <!-- @COMPONENT: CertificateTab -->
+                <div id="certificate" class="tab-content hidden p-6">
+                    <div class="max-w-2xl mx-auto">
+                        <div class="text-center mb-8">
+                            <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-certificate text-yellow-600 text-2xl"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-slate-800 mb-2">Internship Certificate</h2>
+                            <p class="text-slate-600">Your certificate will be available here once your internship is completed.</p>
+                        </div>
+
+                        <!-- Certificate Status -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+                            <div class="text-center">
+                                <div class="mb-6">
+                                    <div class="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-hourglass-half text-yellow-500 text-2xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-slate-800 mb-2">Certificate Pending</h3>
+                                    <p class="text-slate-600 mb-6">Complete all assigned tasks and meet evaluation requirements to receive your certificate.</p>
+                                </div>
+
+                                <!-- Progress Checklist -->
+                                <div class="text-left max-w-sm mx-auto space-y-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-5 h-5 bg-success rounded-full flex items-center justify-center">
+                                            <i class="fas fa-check text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm text-slate-700">Complete 80% of assigned tasks</span>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-5 h-5 bg-success rounded-full flex items-center justify-center">
+                                            <i class="fas fa-check text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm text-slate-700">Attend all scheduled meetings</span>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-5 h-5 border-2 border-slate-300 rounded-full"></div>
+                                        <span class="text-sm text-slate-500">Complete final evaluation</span>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-5 h-5 border-2 border-slate-300 rounded-full"></div>
+                                        <span class="text-sm text-slate-500">Supervisor approval</span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-sm text-blue-800">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        Expected completion: August 30, 2024
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: CertificateTab -->
+
+                <!-- @COMPONENT: AdminTabs -->
+                <!-- Admin Overview -->
+                <div id="admin-overview" class="tab-content hidden p-6">
+                    <div class="max-w-6xl mx-auto">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-bold text-slate-800 mb-2">Admin Dashboard</h2>
+                            <p class="text-slate-600">Overview of all intern activities and management tools</p>
+                        </div>
+
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-users text-blue-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-2xl font-bold text-slate-800">24</div>
+                                        <div class="text-sm text-slate-600">Total Interns</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-tasks text-green-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-2xl font-bold text-slate-800">156</div>
+                                        <div class="text-sm text-slate-600">Active Tasks</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-calendar text-purple-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-2xl font-bold text-slate-800">8</div>
+                                        <div class="text-sm text-slate-600">Meetings This Week</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-certificate text-yellow-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-2xl font-bold text-slate-800">12</div>
+                                        <div class="text-sm text-slate-600">Certificates Issued</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activities -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">Recent Activities</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-lg">
+                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-check text-green-600 text-sm"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-slate-800">Sarah Johnson completed "Database Schema Design"</p>
+                                        <p class="text-xs text-slate-500">2 hours ago</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-lg">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-calendar text-blue-600 text-sm"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-slate-800">New meeting scheduled for Development Team</p>
+                                        <p class="text-xs text-slate-500">4 hours ago</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-lg">
+                                    <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-certificate text-yellow-600 text-sm"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-slate-800">Certificate generated for Michael Chen</p>
+                                        <p class="text-xs text-slate-500">1 day ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Interns -->
+                <div id="admin-interns" class="tab-content hidden p-6">
+                    <div class="max-w-6xl mx-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold text-slate-800">All Interns</h2>
+                            <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Add Intern
+                            </button>
+                        </div>
+
+                        <!-- Interns Table -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <table class="w-full">
+                                <thead class="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th class="text-left p-4 font-medium text-slate-700">Name</th>
+                                        <th class="text-left p-4 font-medium text-slate-700">Email</th>
+                                        <th class="text-left p-4 font-medium text-slate-700">Department</th>
+                                        <th class="text-left p-4 font-medium text-slate-700">Progress</th>
+                                        <th class="text-left p-4 font-medium text-slate-700">Status</th>
+                                        <th class="text-left p-4 font-medium text-slate-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    <!-- @MAP: interns.map(intern => ( -->
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-user text-slate-500 text-xs"></i>
+                                                </div>
+                                                <span class="font-medium text-slate-800">Sarah Johnson</span>
+                                            </div>
+                                        </td>
+                                        <td class="p-4 text-slate-600">sarah.johnson@email.com</td>
+                                        <td class="p-4 text-slate-600">Software Development</td>
+                                        <td class="p-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-16 bg-slate-200 rounded-full h-2">
+                                                    <div class="bg-primary h-2 rounded-full" style="width: 65%"></div>
+                                                </div>
+                                                <span class="text-sm text-slate-600">65%</span>
+                                            </div>
+                                        </td>
+                                        <td class="p-4">
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Active</span>
+                                        </td>
+                                        <td class="p-4">
+                                            <div class="flex gap-2">
+                                                <button class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                    <i class="fas fa-eye text-sm"></i>
+                                                </button>
+                                                <button class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                    <i class="fas fa-edit text-sm"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-user text-slate-500 text-xs"></i>
+                                                </div>
+                                                <span class="font-medium text-slate-800">Michael Chen</span>
+                                            </div>
+                                        </td>
+                                        <td class="p-4 text-slate-600">michael.chen@email.com</td>
+                                        <td class="p-4 text-slate-600">UI/UX Design</td>
+                                        <td class="p-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-16 bg-slate-200 rounded-full h-2">
+                                                    <div class="bg-success h-2 rounded-full" style="width: 100%"></div>
+                                                </div>
+                                                <span class="text-sm text-slate-600">100%</span>
+                                            </div>
+                                        </td>
+                                        <td class="p-4">
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Completed</span>
+                                        </td>
+                                        <td class="p-4">
+                                            <div class="flex gap-2">
+                                                <button class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                    <i class="fas fa-eye text-sm"></i>
+                                                </button>
+                                                <button class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                    <i class="fas fa-certificate text-sm"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- @END_MAP )) -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Tasks -->
+                <div id="admin-tasks" class="tab-content hidden p-6">
+                    <div class="max-w-6xl mx-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold text-slate-800">Task Management</h2>
+                            <div class="flex gap-3">
+                                <button class="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                                    <i class="fas fa-users mr-2"></i>Bulk Assign
+                                </button>
+                                <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                    <i class="fas fa-plus mr-2"></i>New Task
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Task Creation Form -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">Create New Task</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Task Title</label>
+                                    <input type="text" placeholder="Enter task title" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Assign To</label>
+                                    <select class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                        <option>Select intern</option>
+                                        <option>Sarah Johnson</option>
+                                        <option>Michael Chen</option>
+                                        <option>All Interns</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Priority</label>
+                                    <select class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                        <option>Medium</option>
+                                        <option>Low</option>
+                                        <option>High</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Due Date</label>
+                                    <input type="date" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                </div>
+                                <div class="lg:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Description</label>
+                                    <textarea rows="3" placeholder="Enter task description" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none"></textarea>
+                                </div>
+                            </div>
+                            <div class="flex justify-end mt-6">
+                                <button class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                    Create Task
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Active Tasks -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">All Tasks</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                                    <div class="flex-1">
+                                        <h4 class="font-medium text-slate-800">Build User Authentication System</h4>
+                                        <p class="text-sm text-slate-600 mt-1">Assigned to: Sarah Johnson • Due: July 15, 2024</p>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">To Do</span>
+                                        <span class="px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">High</span>
+                                        <button class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                                            <i class="fas fa-edit text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Meetings -->
+                <div id="admin-meetings" class="tab-content hidden p-6">
+                    <div class="max-w-6xl mx-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold text-slate-800">Meeting Management</h2>
+                            <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Schedule Meeting
+                            </button>
+                        </div>
+
+                        <!-- Meeting Scheduler -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">Schedule New Meeting</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Meeting Title</label>
+                                    <input type="text" placeholder="Enter meeting title" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Date</label>
+                                    <input type="date" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Time</label>
+                                    <input type="time" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Platform</label>
+                                    <select class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                        <option>Google Meet</option>
+                                        <option>Zoom</option>
+                                        <option>Microsoft Teams</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Attendees</label>
+                                    <select class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                        <option>All Interns</option>
+                                        <option>Sarah Johnson</option>
+                                        <option>Michael Chen</option>
+                                        <option>Custom Selection</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Duration</label>
+                                    <select class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none">
+                                        <option>30 minutes</option>
+                                        <option>1 hour</option>
+                                        <option>1.5 hours</option>
+                                        <option>2 hours</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end mt-6">
+                                <button class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                    Schedule Meeting
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Scheduled Meetings -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">Upcoming Meetings</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                                    <div class="flex-1">
+                                        <h4 class="font-medium text-slate-800">Weekly Progress Review</h4>
+                                        <p class="text-sm text-slate-600 mt-1">July 8, 2024 • 2:00 PM - 3:00 PM • Google Meet</p>
+                                        <p class="text-xs text-slate-500 mt-1">Attendees: Sarah Johnson, Michael Chen (2 interns)</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button class="px-3 py-1 text-primary text-sm border border-primary rounded-lg hover:bg-blue-50 transition-colors">
+                                            Edit
+                                        </button>
+                                        <button class="px-3 py-1 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Certificates -->
+                <div id="admin-certificates" class="tab-content hidden p-6">
+                    <div class="max-w-6xl mx-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold text-slate-800">Certificate Management</h2>
+                            <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Generate Certificate
+                            </button>
+                        </div>
+
+                        <!-- Certificate Stats -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-certificate text-green-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-2xl font-bold text-slate-800">12</div>
+                                        <div class="text-sm text-slate-600">Certificates Issued</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-hourglass-half text-yellow-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-2xl font-bold text-slate-800">8</div>
+                                        <div class="text-sm text-slate-600">Pending Certificates</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-download text-blue-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-2xl font-bold text-slate-800">45</div>
+                                        <div class="text-sm text-slate-600">Total Downloads</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Certificate Management Table -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="p-6 border-b border-slate-200">
+                                <h3 class="text-lg font-semibold text-slate-800">All Certificates</h3>
+                            </div>
+                            <table class="w-full">
+                                <thead class="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        <th class="text-left p-4 font-medium text-slate-700">Intern</th>
+                                        <th class="text-left p-4 font-medium text-slate-700">Progress</th>
+                                        <th class="text-left p-4 font-medium text-slate-700">Completion Date</th>
+                                        <th class="text-left p-4 font-medium text-slate-700">Status</th>
+                                        <th class="text-left p-4 font-medium text-slate-700">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-user text-slate-500 text-xs"></i>
+                                                </div>
+                                                <span class="font-medium text-slate-800">Michael Chen</span>
+                                            </div>
+                                        </td>
+                                        <td class="p-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-16 bg-slate-200 rounded-full h-2">
+                                                    <div class="bg-success h-2 rounded-full" style="width: 100%"></div>
+                                                </div>
+                                                <span class="text-sm text-slate-600">100%</span>
+                                            </div>
+                                        </td>
+                                        <td class="p-4 text-slate-600">August 15, 2024</td>
+                                        <td class="p-4">
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Issued</span>
+                                        </td>
+                                        <td class="p-4">
+                                            <div class="flex gap-2">
+                                                <button class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                    <i class="fas fa-download text-sm"></i>
+                                                </button>
+                                                <button class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                    <i class="fas fa-eye text-sm"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-user text-slate-500 text-xs"></i>
+                                                </div>
+                                                <span class="font-medium text-slate-800">Sarah Johnson</span>
+                                            </div>
+                                        </td>
+                                        <td class="p-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-16 bg-slate-200 rounded-full h-2">
+                                                    <div class="bg-primary h-2 rounded-full" style="width: 65%"></div>
+                                                </div>
+                                                <span class="text-sm text-slate-600">65%</span>
+                                            </div>
+                                        </td>
+                                        <td class="p-4 text-slate-600">-</td>
+                                        <td class="p-4">
+                                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">Pending</span>
+                                        </td>
+                                        <td class="p-4">
+                                            <button disabled class="p-2 text-slate-400 cursor-not-allowed">
+                                                <i class="fas fa-clock text-sm"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: AdminTabs -->
+            </main>
+        </div>
+        <!-- @END_COMPONENT: MainContent -->
+    </div>
+
+    <script>
+        (function() {
+            // @STATE: currentMode = 'intern' | 'admin'
+            // @STATE: activeTab = string
+            // @STATE: notifications = Array<Notification>
+            
+            let currentMode = 'intern';
+            let activeTab = 'profile';
+            let isAdminAuthenticated = false;
+
+            // Tab Navigation
+            function showTab(tabId) {
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.add('hidden');
+                });
+                
+                // Remove active class from all nav items
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active', 'bg-primary', 'text-white');
+                    item.classList.add('text-slate-700');
+                });
+                
+                // Show selected tab
+                const targetTab = document.getElementById(tabId);
+                if (targetTab) {
+                    targetTab.classList.remove('hidden');
+                }
+                
+                // Add active class to clicked nav item
+                event.target.closest('.nav-item').classList.add('active', 'bg-primary', 'text-white');
+                event.target.closest('.nav-item').classList.remove('text-slate-700');
+                
+                // Update page title and subtitle
+                updatePageTitle(tabId);
+                
+                activeTab = tabId;
+            }
+
+            function updatePageTitle(tabId) {
+                const titles = {
+                    'profile': { title: 'Profile', subtitle: 'Manage your internship profile' },
+                    'tasks': { title: 'Tasks', subtitle: 'Track your assigned tasks and progress' },
+                    'meetings': { title: 'Meetings', subtitle: 'View and join your scheduled meetings' },
+                    'certificate': { title: 'Certificate', subtitle: 'Download your internship certificate' },
+                    'admin-overview': { title: 'Admin Dashboard', subtitle: 'Overview of all intern activities' },
+                    'admin-interns': { title: 'All Interns', subtitle: 'Manage intern profiles and progress' },
+                    'admin-tasks': { title: 'Task Management', subtitle: 'Create and assign tasks to interns' },
+                    'admin-meetings': { title: 'Meeting Management', subtitle: 'Schedule and manage meetings' },
+                    'admin-certificates': { title: 'Certificate Management', subtitle: 'Generate and manage certificates' }
+                };
+                
+                const pageInfo = titles[tabId] || { title: 'Dashboard', subtitle: 'Welcome to InternTrack' };
+                document.getElementById('pageTitle').textContent = pageInfo.title;
+                document.getElementById('pageSubtitle').textContent = pageInfo.subtitle;
+            }
+
+            // Mode Toggle
+            function toggleMode() {
+                if (currentMode === 'intern') {
+                    if (!isAdminAuthenticated) {
+                        document.getElementById('adminModal').classList.remove('hidden');
+                        return;
+                    }
+                    switchToAdminMode();
+                } else {
+                    switchToInternMode();
+                }
+            }
+
+            function switchToAdminMode() {
+                currentMode = 'admin';
+                document.getElementById('internNav').classList.add('hidden');
+                document.getElementById('adminNav').classList.remove('hidden');
+                document.getElementById('modeToggle').innerHTML = '<i class="fas fa-user w-5"></i><span>Intern Mode</span>';
+                showTab('admin-overview');
+            }
+
+            function switchToInternMode() {
+                currentMode = 'intern';
+                document.getElementById('adminNav').classList.add('hidden');
+                document.getElementById('internNav').classList.remove('hidden');
+                document.getElementById('modeToggle').innerHTML = '<i class="fas fa-cog w-5"></i><span>Admin Mode</span>';
+                showTab('profile');
+            }
+
+            // Admin Authentication
+            function adminLogin() {
+                const password = document.getElementById('adminPassword').value;
+                // TODO: Implement real authentication
+                if (password === 'admin123') {
+                    isAdminAuthenticated = true;
+                    closeAdminModal();
+                    switchToAdminMode();
+                    showNotification('Admin access granted', 'success');
+                } else {
+                    showNotification('Invalid password', 'error');
+                }
+            }
+
+            function closeAdminModal() {
+                document.getElementById('adminModal').classList.add('hidden');
+                document.getElementById('adminPassword').value = '';
+            }
+
+            // Task Management
+            function filterTasks(status) {
+                const tasks = document.querySelectorAll('.task-item');
+                const filters = document.querySelectorAll('.task-filter');
+                
+                // Update filter buttons
+                filters.forEach(filter => {
+                    filter.classList.remove('active', 'bg-primary', 'text-white');
+                    filter.classList.add('text-slate-600');
+                });
+                event.target.classList.add('active', 'bg-primary', 'text-white');
+                event.target.classList.remove('text-slate-600');
+                
+                // Filter tasks
+                tasks.forEach(task => {
+                    if (status === 'all') {
+                        task.style.display = 'block';
+                    } else {
+                        const taskStatus = task.getAttribute('data-status');
+                        task.style.display = taskStatus === status ? 'block' : 'none';
+                    }
+                });
+            }
+
+            // Task Status Toggle
+            function toggleTaskStatus(taskElement) {
+                const checkbox = taskElement.querySelector('.task-checkbox');
+                const statusBadge = taskElement.querySelector('.px-3.py-1');
+                const title = taskElement.querySelector('h3');
+                
+                // TODO: Implement actual status update logic
+                // This is just for visual demonstration
+            }
+
+            // Notifications
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification flex items-center gap-3 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+                
+                const colors = {
+                    'success': 'bg-green-500 text-white',
+                    'error': 'bg-red-500 text-white',
+                    'warning': 'bg-yellow-500 text-white',
+                    'info': 'bg-blue-500 text-white'
+                };
+                
+                notification.className += ` ${colors[type] || colors.info}`;
+                
+                const icons = {
+                    'success': 'fas fa-check-circle',
+                    'error': 'fas fa-exclamation-circle',
+                    'warning': 'fas fa-exclamation-triangle',
+                    'info': 'fas fa-info-circle'
+                };
+                
+                notification.innerHTML = `
+                    <i class="${icons[type] || icons.info}"></i>
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.remove()" class="ml-auto text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                document.getElementById('notificationContainer').appendChild(notification);
+                
+                // Animate in
+                setTimeout(() => {
+                    notification.classList.remove('translate-x-full');
+                }, 100);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.classList.add('translate-x-full');
+                        setTimeout(() => notification.remove(), 300);
+                    }
+                }, 5000);
+            }
+
+            // Mobile Menu Toggle
+            function toggleMobileMenu() {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            }
+
+            // Global Event Listeners
+            document.addEventListener('DOMContentLoaded', function() {
+                // Set initial active state
+                document.querySelector('.nav-item.active').classList.add('bg-primary', 'text-white');
+                document.querySelector('.nav-item.active').classList.remove('text-slate-700');
+                
+                // Mobile menu toggle
+                document.getElementById('mobileMenuToggle').addEventListener('click', toggleMobileMenu);
+                
+                // Close mobile menu on overlay click
+                document.getElementById('sidebarOverlay').addEventListener('click', toggleMobileMenu);
+                
+                // Close admin modal on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        closeAdminModal();
+                    }
+                });
+                
+                // Admin password enter key
+                document.getElementById('adminPassword').addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        adminLogin();
+                    }
+                });
+                
+                // Task checkboxes
+                document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('click', function() {
+                        toggleTaskStatus(this.closest('.task-item'));
+                    });
+                });
+            });
+
+            // Expose functions globally for onclick handlers
+            window.showTab = showTab;
+            window.toggleMode = toggleMode;
+            window.adminLogin = adminLogin;
+            window.closeAdminModal = closeAdminModal;
+            window.filterTasks = filterTasks;
+            window.showNotification = showNotification;
+            
+            // Demo notifications on load
+            setTimeout(() => {
+                showNotification('Welcome to InternTrack Dashboard!', 'success');
+            }, 1000);
+            
+            setTimeout(() => {
+                showNotification('You have 3 pending tasks', 'info');
+            }, 3000);
+
+        })();
+    </script>
+</body>
+</html>
