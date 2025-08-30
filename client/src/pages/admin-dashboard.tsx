@@ -3,8 +3,7 @@ import Sidebar from "@/components/sidebar";
 import AdminOverview from "@/components/admin/admin-overview";
 import AdminInterns from "@/components/admin/admin-interns";
 import AdminTasks from "@/components/admin/admin-tasks";
-import AdminMeetings from "@/components/admin/admin-meetings";
-import AdminCertificates from "@/components/admin/admin-certificates";
+import AdminResources from "@/components/admin/admin-resources";
 import { useLocation } from "wouter";
 
 export default function AdminDashboard() {
@@ -19,10 +18,8 @@ export default function AdminDashboard() {
         return <AdminInterns />;
       case "admin-tasks":
         return <AdminTasks />;
-      case "admin-meetings":
-        return <AdminMeetings />;
-      case "admin-certificates":
-        return <AdminCertificates />;
+      case "admin-resources":
+        return <AdminResources />;
       default:
         return <AdminOverview />;
     }
@@ -33,8 +30,7 @@ export default function AdminDashboard() {
       "admin-overview": { title: "Admin Dashboard", subtitle: "Overview of all intern activities" },
       "admin-interns": { title: "All Interns", subtitle: "Manage intern profiles and progress" },
       "admin-tasks": { title: "Task Management", subtitle: "Create and assign tasks to interns" },
-      "admin-meetings": { title: "Meeting Management", subtitle: "Schedule and manage meetings" },
-      "admin-certificates": { title: "Certificate Management", subtitle: "Generate and manage certificates" },
+      "admin-resources": { title: "Resource Management", subtitle: "Upload and manage team resources" },
     };
     return titles[activeTab as keyof typeof titles] || titles["admin-overview"];
   };

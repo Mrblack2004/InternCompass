@@ -4,13 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
-  const [userType, setUserType] = useState<"intern" | "admin" | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -18,73 +20,75 @@ export default function Login() {
       return;
     }
 
-    if (userType === "admin") {
-      if (username === "admin" && password === "admin123") {
-        localStorage.setItem("userType", "admin");
-        localStorage.setItem("username", username);
-        setLocation("/admin");
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (response.ok) {
+        const user = await response.json();
+        
+        // Store user data in localStorage
+        localStorage.setItem("userId", user.id);
+        localStorage.setItem("username", user.username);
+        localStorage.setItem("userRole", user.role);
+        localStorage.setItem("teamId", user.teamId || "");
+        localStorage.setItem("userName", user.name);
+
+        // Redirect based on role
+        switch (user.role) {
+          case "intern":
+            setLocation("/intern");
+            break;
+          case "admin":
+            setLocation("/admin");
+            break;
+          case "superadmin":
+            setLocation("/superadmin");
+            break;
+          default:
+            setError("Invalid user role");
+            return;
+        }
+
+        toast({
+          title: "Login successful",
+          description: `Welcome back, ${user.name}!`,
+        });
       } else {
-        setError("Invalid admin credentials. Use: admin / admin123");
+        const errorData = await response.json();
+        setError(errorData.message || "Invalid credentials");
       }
-    } else if (userType === "intern") {
-      // Handle intern login with hardcoded credentials
-      if (username === "intern" && password === "intern123") {
-        localStorage.setItem("userType", "intern");
-        localStorage.setItem("username", username);
-        localStorage.setItem("internId", "intern_001"); // Mock intern ID
-        setLocation("/intern");
-      } else {
-        setError("Invalid intern credentials. Use: intern / intern123");
-      }
+    } catch (error) {
+      setError("Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (!userType) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Intern Management System</CardTitle>
-            <CardDescription>Please select your role to continue</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              onClick={() => setUserType("intern")} 
-              className="w-full h-12 text-lg"
-              data-testid="button-intern-role"
-            >
-              I'm an Intern
-            </Button>
-            <Button 
-              onClick={() => setUserType("admin")} 
-              variant="outline" 
-              className="w-full h-12 text-lg"
-              data-testid="button-admin-role"
-            >
-              I'm an Administrator
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleLogin();
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
-            {userType === "admin" ? "Admin Login" : "Intern Login"}
-          </CardTitle>
-          <CardDescription>
-            {userType === "admin" 
-              ? "Username: admin, Password: admin123" 
-              : "Username: intern, Password: intern123"
-            }
-            <br />
-            <a href="/upload" className="text-blue-600 hover:underline text-sm">
-              Upload Excel Files Here
-            </a>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center space-y-2">
+          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-graduation-cap text-white text-2xl"></i>
+          </div>
+          <CardTitle className="text-2xl font-bold text-slate-800">InternTrack</CardTitle>
+          <CardDescription className="text-slate-600">
+            Sign in to your account to continue
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -96,6 +100,7 @@ export default function Login() {
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              onKeyPress={handleKeyPress}
               data-testid="input-username"
             />
           </div>
@@ -107,30 +112,31 @@ export default function Login() {
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
               data-testid="input-password"
             />
           </div>
           {error && (
-            <div className="text-red-500 text-sm text-center" data-testid="text-error">
+            <div className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-lg" data-testid="text-error">
               {error}
             </div>
           )}
-          <div className="space-y-2">
-            <Button 
-              onClick={handleLogin} 
-              className="w-full"
-              data-testid="button-login"
-            >
-              Login
-            </Button>
-            <Button 
-              onClick={() => setUserType(null)} 
-              variant="outline" 
-              className="w-full"
-              data-testid="button-back"
-            >
-              Back
-            </Button>
+          <Button 
+            onClick={handleLogin} 
+            className="w-full"
+            disabled={isLoading}
+            data-testid="button-login"
+          >
+            {isLoading ? "Signing in..." : "Sign In"}
+          </Button>
+          
+          <div className="mt-6 p-4 bg-slate-50 rounded-lg">
+            <h4 className="font-medium text-slate-800 mb-2">Demo Credentials:</h4>
+            <div className="space-y-1 text-sm text-slate-600">
+              <p><strong>Intern:</strong> intern / intern123</p>
+              <p><strong>Admin:</strong> admin / admin123</p>
+              <p><strong>Super Admin:</strong> Watcher / 12345</p>
+            </div>
           </div>
         </CardContent>
       </Card>

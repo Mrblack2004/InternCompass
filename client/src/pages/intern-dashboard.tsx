@@ -2,17 +2,17 @@ import { useState } from "react";
 import Sidebar from "@/components/sidebar";
 import ProfileTab from "@/components/intern/profile-tab";
 import TasksTab from "@/components/intern/tasks-tab";
-import MeetingsTab from "@/components/intern/meetings-tab";
+import ResourcesTab from "@/components/intern/resources-tab";
 import CertificateTab from "@/components/intern/certificate-tab";
 import { useQuery } from "@tanstack/react-query";
 import type { Notification } from "@shared/schema";
 
 export default function InternDashboard() {
   const [activeTab, setActiveTab] = useState("profile");
-  const currentInternId = localStorage.getItem("internId") || "intern-1";
+  const currentUserId = localStorage.getItem("userId") || "";
 
   const { data: notifications = [] } = useQuery<Notification[]>({
-    queryKey: ["/api/notifications/intern", currentInternId],
+    queryKey: ["/api/notifications/user", currentUserId],
   });
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -20,15 +20,15 @@ export default function InternDashboard() {
   const renderTabContent = () => {
     switch (activeTab) {
       case "profile":
-        return <ProfileTab internId={currentInternId} />;
+        return <ProfileTab userId={currentUserId} />;
       case "tasks":
-        return <TasksTab internId={currentInternId} />;
-      case "meetings":
-        return <MeetingsTab internId={currentInternId} />;
+        return <TasksTab userId={currentUserId} />;
+      case "resources":
+        return <ResourcesTab userId={currentUserId} />;
       case "certificate":
-        return <CertificateTab internId={currentInternId} />;
+        return <CertificateTab userId={currentUserId} />;
       default:
-        return <ProfileTab internId={currentInternId} />;
+        return <ProfileTab userId={currentUserId} />;
     }
   };
 
@@ -36,7 +36,7 @@ export default function InternDashboard() {
     const titles = {
       profile: { title: "Profile", subtitle: "Manage your internship profile" },
       tasks: { title: "Tasks", subtitle: "Track your assigned tasks and progress" },
-      meetings: { title: "Meetings", subtitle: "View and join your scheduled meetings" },
+      resources: { title: "Resources", subtitle: "Access meeting links, documents, and notes" },
       certificate: { title: "Certificate", subtitle: "Download your internship certificate" },
     };
     return titles[activeTab as keyof typeof titles] || titles.profile;

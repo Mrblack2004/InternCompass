@@ -15,7 +15,7 @@ export default function Sidebar({ mode, activeTab, onTabChange }: SidebarProps) 
   const internNavItems = [
     { id: "profile", icon: "fas fa-user", label: "Profile" },
     { id: "tasks", icon: "fas fa-tasks", label: "Tasks" },
-    { id: "meetings", icon: "fas fa-calendar", label: "Meetings" },
+    { id: "resources", icon: "fas fa-folder", label: "Resources" },
     { id: "certificate", icon: "fas fa-certificate", label: "Certificate" },
   ];
 
@@ -23,8 +23,7 @@ export default function Sidebar({ mode, activeTab, onTabChange }: SidebarProps) 
     { id: "admin-overview", icon: "fas fa-tachometer-alt", label: "Overview" },
     { id: "admin-interns", icon: "fas fa-users", label: "All Interns" },
     { id: "admin-tasks", icon: "fas fa-clipboard-list", label: "Task Management" },
-    { id: "admin-meetings", icon: "fas fa-video", label: "Meetings" },
-    { id: "admin-certificates", icon: "fas fa-award", label: "Certificates" },
+    { id: "admin-resources", icon: "fas fa-folder-open", label: "Resources" },
   ];
 
   const handleLogout = () => {

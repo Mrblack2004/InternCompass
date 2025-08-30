@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertInternSchema, insertTaskSchema, insertMeetingSchema, insertCertificateSchema, insertNotificationSchema } from "@shared/schema";
+import { insertUserSchema, insertTaskSchema, insertResourceSchema, insertCertificateSchema, insertNotificationSchema } from "@shared/schema";
 import { ProgressCalculator } from "./progress-calculator";
 import { importExcelData } from "./excel-import";
 import multer from "multer";
@@ -19,158 +19,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await importExcelData();
 
   // Authentication routes
-  app.post("/api/interns/authenticate", async (req, res) => {
+  app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      const intern = await storage.authenticateIntern(username, password);
-      if (!intern) {
+      const user = await storage.authenticateUser(username, password);
+      if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
-      res.json(intern);
+      res.json(user);
     } catch (error) {
       res.status(500).json({ message: "Authentication failed" });
     }
   });
 
-  // Excel upload route
-  app.post("/api/upload-excel", upload.single("file"), async (req, res) => {
+  // User routes
+  app.get("/api/users", async (req, res) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
-
-      const { type } = req.body;
-      if (!type || !["intern", "admin"].includes(type)) {
-        return res.status(400).json({ message: "Invalid upload type" });
-      }
-
-      // Parse Excel file
-      const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const data = XLSX.utils.sheet_to_json(worksheet);
-
-      let importedCount = 0;
-
-      if (type === "intern") {
-        for (const row of data) {
-          try {
-            const rowData = row as any;
-            const internData = {
-              username: rowData.username || rowData.Username,
-              password: rowData.password || rowData.Password,
-              name: rowData.name || rowData.Name,
-              email: rowData.email || rowData.Email,
-              mobileNumber: rowData.mobileNumber || rowData.MobileNumber || rowData.mobile || rowData.Mobile || "",
-              department: rowData.department || rowData.Department || "General",
-              startDate: rowData.startDate || rowData.StartDate || "2024-01-01",
-              endDate: rowData.endDate || rowData.EndDate || "2024-12-31",
-            };
-
-            // Validate required fields
-            if (!internData.username || !internData.password || !internData.name || !internData.email) {
-              console.warn("Skipping row - missing required fields:", rowData);
-              continue;
-            }
-
-            // Check if intern already exists
-            const existingIntern = await storage.getInternByUsername(internData.username);
-            if (!existingIntern) {
-              await storage.createIntern({
-                ...internData,
-                profilePhoto: null,
-                progress: 0,
-                isActive: true,
-                attendanceCount: 0,
-              });
-              importedCount++;
-              console.log(`✓ Imported intern: ${internData.name} (${internData.username})`);
-            }
-          } catch (error) {
-            console.error("Failed to import intern row:", error);
-          }
-        }
-      }
-
-      res.json({ 
-        message: `Successfully imported ${importedCount} ${type} records`,
-        count: importedCount 
-      });
+      const users = await storage.getAllUsers();
+      res.json(users);
     } catch (error) {
-      console.error("Excel upload error:", error);
-      res.status(500).json({ message: "Failed to process Excel file" });
+      res.status(500).json({ message: "Failed to fetch users" });
     }
   });
 
-  // Attendance routes
-  app.post("/api/interns/:id/attendance", async (req, res) => {
+  app.get("/api/users/:id", async (req, res) => {
     try {
-      const intern = await storage.getIntern(req.params.id);
-      if (!intern) {
-        return res.status(404).json({ message: "Intern not found" });
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
       }
-      
-      const updatedIntern = await storage.updateIntern(req.params.id, {
-        attendanceCount: intern.attendanceCount + 1
-      });
-      
-      // Recalculate progress after attendance update
-      await ProgressCalculator.calculateInternProgress(req.params.id);
-      
-      res.json(updatedIntern);
+      res.json(user);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update attendance" });
+      res.status(500).json({ message: "Failed to fetch user" });
     }
   });
 
-  // Intern routes
-  app.get("/api/interns", async (req, res) => {
+  app.get("/api/users/team/:teamId", async (req, res) => {
     try {
-      const interns = await storage.getAllInterns();
-      res.json(interns);
+      const users = await storage.getUsersByTeam(req.params.teamId);
+      res.json(users);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch interns" });
+      res.status(500).json({ message: "Failed to fetch team users" });
     }
   });
 
-  app.get("/api/interns/:id", async (req, res) => {
+  app.post("/api/users", async (req, res) => {
     try {
-      const intern = await storage.getIntern(req.params.id);
-      if (!intern) {
-        return res.status(404).json({ message: "Intern not found" });
-      }
-      res.json(intern);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch intern" });
-    }
-  });
-
-  app.post("/api/interns", async (req, res) => {
-    try {
-      const validatedData = insertInternSchema.parse(req.body);
-      const intern = await storage.createIntern(validatedData);
-      res.status(201).json(intern);
+      const validatedData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(validatedData);
+      res.status(201).json(user);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create intern" });
+      res.status(500).json({ message: "Failed to create user" });
     }
   });
 
-  app.patch("/api/interns/:id", async (req, res) => {
+  // Team routes
+  app.get("/api/teams", async (req, res) => {
     try {
-      const partialData = insertInternSchema.partial().parse(req.body);
-      const intern = await storage.updateIntern(req.params.id, partialData);
-      if (!intern) {
-        return res.status(404).json({ message: "Intern not found" });
-      }
-      res.json(intern);
+      const teams = await storage.getAllTeams();
+      res.json(teams);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      res.status(500).json({ message: "Failed to fetch teams" });
+    }
+  });
+
+  app.get("/api/teams/admin/:adminId", async (req, res) => {
+    try {
+      const team = await storage.getTeamByAdmin(req.params.adminId);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
       }
-      res.status(500).json({ message: "Failed to update intern" });
+      res.json(team);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch team" });
     }
   });
 
@@ -184,12 +108,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/tasks/intern/:internId", async (req, res) => {
+  app.get("/api/tasks/user/:userId", async (req, res) => {
     try {
-      const tasks = await storage.getTasksByIntern(req.params.internId);
+      const tasks = await storage.getTasksByUser(req.params.userId);
       res.json(tasks);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.get("/api/tasks/team/:teamId", async (req, res) => {
+    try {
+      const tasks = await storage.getTasksByTeam(req.params.teamId);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch team tasks" });
+    }
+  });
+
+  app.get("/api/tasks/admin/:adminId", async (req, res) => {
+    try {
+      const tasks = await storage.getTasksByAdmin(req.params.adminId);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch admin tasks" });
     }
   });
 
@@ -198,10 +140,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertTaskSchema.parse(req.body);
       const task = await storage.createTask(validatedData);
       
-      // Create notification for assigned intern
-      if (validatedData.assignedTo) {
+      // Create notifications for assigned users
+      if (validatedData.isTeamTask && validatedData.teamId) {
+        const teamMembers = await storage.getUsersByTeam(validatedData.teamId);
+        for (const member of teamMembers.filter(m => m.role === "intern")) {
+          await storage.createNotification({
+            userId: member.id,
+            type: "task_assigned",
+            title: "New Team Task Assigned",
+            message: `A new team task has been assigned: ${validatedData.title}`,
+            isRead: false,
+          });
+        }
+      } else if (validatedData.assignedTo) {
         await storage.createNotification({
-          internId: validatedData.assignedTo,
+          userId: validatedData.assignedTo,
           type: "task_assigned",
           title: "New Task Assigned",
           message: `You have been assigned a new task: ${validatedData.title}`,
@@ -226,9 +179,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Task not found" });
       }
       
-      // Recalculate progress and check certificate eligibility when task is completed
+      // Recalculate progress when task is completed
       if (task.assignedTo && partialData.status === "completed") {
-        await ProgressCalculator.calculateInternProgress(task.assignedTo);
+        await ProgressCalculator.calculateUserProgress(task.assignedTo);
         await ProgressCalculator.generateCertificateIfEligible(task.assignedTo);
       }
       
@@ -241,49 +194,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Meeting routes
-  app.get("/api/meetings", async (req, res) => {
+  // Resource routes
+  app.get("/api/resources", async (req, res) => {
     try {
-      const meetings = await storage.getAllMeetings();
-      res.json(meetings);
+      const resources = await storage.getAllResources();
+      res.json(resources);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch meetings" });
+      res.status(500).json({ message: "Failed to fetch resources" });
     }
   });
 
-  app.get("/api/meetings/intern/:internId", async (req, res) => {
+  app.get("/api/resources/team/:teamId", async (req, res) => {
     try {
-      const meetings = await storage.getMeetingsByIntern(req.params.internId);
-      res.json(meetings);
+      const resources = await storage.getResourcesByTeam(req.params.teamId);
+      res.json(resources);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch meetings" });
+      res.status(500).json({ message: "Failed to fetch team resources" });
     }
   });
 
-  app.post("/api/meetings", async (req, res) => {
+  app.post("/api/resources", async (req, res) => {
     try {
-      const validatedData = insertMeetingSchema.parse(req.body);
-      const meeting = await storage.createMeeting(validatedData);
+      const validatedData = insertResourceSchema.parse(req.body);
+      const resource = await storage.createResource(validatedData);
       
-      // Create notifications for attendees
-      if (validatedData.attendees) {
-        for (const internId of validatedData.attendees) {
+      // Create notifications for team members
+      if (validatedData.teamId) {
+        const teamMembers = await storage.getUsersByTeam(validatedData.teamId);
+        for (const member of teamMembers.filter(m => m.role === "intern")) {
           await storage.createNotification({
-            internId,
-            type: "meeting_scheduled",
-            title: "New Meeting Scheduled",
-            message: `You have been invited to: ${validatedData.title} on ${validatedData.date}`,
+            userId: member.id,
+            type: "resource_uploaded",
+            title: "New Resource Available",
+            message: `A new ${validatedData.type.replace('_', ' ')} has been shared: ${validatedData.title}`,
             isRead: false,
           });
         }
       }
       
-      res.status(201).json(meeting);
+      res.status(201).json(resource);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create meeting" });
+      res.status(500).json({ message: "Failed to create resource" });
     }
   });
 
@@ -297,9 +251,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/certificates/intern/:internId", async (req, res) => {
+  app.get("/api/certificates/user/:userId", async (req, res) => {
     try {
-      const certificate = await storage.getCertificateByIntern(req.params.internId);
+      const certificate = await storage.getCertificateByUser(req.params.userId);
       if (!certificate) {
         return res.status(404).json({ message: "Certificate not found" });
       }
@@ -309,51 +263,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/certificates", async (req, res) => {
-    try {
-      const validatedData = insertCertificateSchema.parse(req.body);
-      const certificate = await storage.createCertificate(validatedData);
-      res.status(201).json(certificate);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to create certificate" });
-    }
-  });
-
-  app.patch("/api/certificates/:id", async (req, res) => {
-    try {
-      const partialData = insertCertificateSchema.partial().parse(req.body);
-      const certificate = await storage.updateCertificate(req.params.id, partialData);
-      if (!certificate) {
-        return res.status(404).json({ message: "Certificate not found" });
-      }
-      
-      // Create notification when certificate is generated
-      if (partialData.isGenerated && partialData.certificateUrl) {
-        await storage.createNotification({
-          internId: certificate.internId,
-          type: "certificate_ready",
-          title: "Certificate Available",
-          message: "Your internship certificate is ready for download!",
-          isRead: false,
-        });
-      }
-      
-      res.json(certificate);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to update certificate" });
-    }
-  });
-
   // Notification routes
-  app.get("/api/notifications/intern/:internId", async (req, res) => {
+  app.get("/api/notifications/user/:userId", async (req, res) => {
     try {
-      const notifications = await storage.getNotificationsByIntern(req.params.internId);
+      const notifications = await storage.getNotificationsByUser(req.params.userId);
       res.json(notifications);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch notifications" });
@@ -376,24 +289,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stats endpoint for admin dashboard
+  // Stats endpoint for dashboards
   app.get("/api/stats", async (req, res) => {
     try {
-      const interns = await storage.getAllInterns();
+      const users = await storage.getAllUsers();
       const tasks = await storage.getAllTasks();
-      const meetings = await storage.getAllMeetings();
+      const resources = await storage.getAllResources();
       const certificates = await storage.getAllCertificates();
 
       const stats = {
-        totalInterns: interns.length,
+        totalInterns: users.filter(u => u.role === "intern").length,
+        totalAdmins: users.filter(u => u.role === "admin").length,
         activeTasks: tasks.filter(t => t.status !== 'completed').length,
-        totalMeetings: meetings.length,
+        totalResources: resources.length,
         certificatesIssued: certificates.filter(c => c.isGenerated).length,
       };
 
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  // Super Admin specific routes
+  app.get("/api/superadmin/overview", async (req, res) => {
+    try {
+      const teams = await storage.getAllTeams();
+      const teamData = [];
+
+      for (const team of teams) {
+        const admin = await storage.getUser(team.adminId);
+        const members = await storage.getUsersByTeam(team.id);
+        const teamTasks = await storage.getTasksByTeam(team.id);
+        
+        teamData.push({
+          team,
+          admin,
+          members: members.filter(m => m.role === "intern"),
+          taskCount: teamTasks.length,
+          completedTasks: teamTasks.filter(t => t.status === "completed").length,
+        });
+      }
+
+      res.json(teamData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch super admin overview" });
+    }
+  });
+
+  // Legacy routes for backward compatibility
+  app.post("/api/interns/authenticate", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      const user = await storage.authenticateUser(username, password);
+      if (!user || user.role !== "intern") {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Authentication failed" });
+    }
+  });
+
+  app.get("/api/interns", async (req, res) => {
+    try {
+      const interns = await storage.getUsersByRole("intern");
+      res.json(interns);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch interns" });
+    }
+  });
+
+  app.get("/api/tasks/intern/:internId", async (req, res) => {
+    try {
+      const tasks = await storage.getTasksByUser(req.params.internId);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.get("/api/meetings/intern/:internId", async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.internId);
+      if (!user?.teamId) {
+        return res.json([]);
+      }
+      const meetings = await storage.getResourcesByTeam(user.teamId);
+      res.json(meetings.filter(r => r.type === "meeting_link"));
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch meetings" });
+    }
+  });
+
+  app.get("/api/certificates/intern/:internId", async (req, res) => {
+    try {
+      const certificate = await storage.getCertificateByUser(req.params.internId);
+      if (!certificate) {
+        return res.status(404).json({ message: "Certificate not found" });
+      }
+      res.json(certificate);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch certificate" });
+    }
+  });
+
+  app.get("/api/notifications/intern/:internId", async (req, res) => {
+    try {
+      const notifications = await storage.getNotificationsByUser(req.params.internId);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch notifications" });
     }
   });
 

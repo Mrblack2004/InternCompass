@@ -1,53 +1,69 @@
 import { 
-  type Intern, 
-  type InsertIntern, 
+  type User, 
+  type InsertUser, 
   type Task, 
   type InsertTask,
-  type Meeting,
-  type InsertMeeting,
+  type Resource,
+  type InsertResource,
   type Certificate,
   type InsertCertificate,
   type Notification,
-  type InsertNotification
+  type InsertNotification,
+  type Team,
+  type InsertTeam
 } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { db } from "./db";
-import { interns, tasks, meetings, certificates, notifications } from "../shared/schema";
+import { users, tasks, resources, certificates, notifications, teams } from "../shared/schema";
 
 export interface IStorage {
-  // Interns
-  getIntern(id: string): Promise<Intern | undefined>;
-  getInternByEmail(email: string): Promise<Intern | undefined>;
-  getInternByUsername(username: string): Promise<Intern | undefined>;
-  authenticateIntern(username: string, password: string): Promise<Intern | undefined>;
-  getAllInterns(): Promise<Intern[]>;
-  createIntern(intern: InsertIntern): Promise<Intern>;
-  updateIntern(id: string, updates: Partial<InsertIntern>): Promise<Intern | undefined>;
+  // Authentication
+  authenticateUser(username: string, password: string): Promise<User | undefined>;
+  
+  // Users
+  getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  getUsersByTeam(teamId: string): Promise<User[]>;
+  getUsersByRole(role: string): Promise<User[]>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
+  
+  // Teams
+  getTeam(id: string): Promise<Team | undefined>;
+  getAllTeams(): Promise<Team[]>;
+  getTeamByAdmin(adminId: string): Promise<Team | undefined>;
+  createTeam(team: InsertTeam): Promise<Team>;
+  updateTeam(id: string, updates: Partial<InsertTeam>): Promise<Team | undefined>;
   
   // Tasks
   getTask(id: string): Promise<Task | undefined>;
-  getTasksByIntern(internId: string): Promise<Task[]>;
+  getTasksByUser(userId: string): Promise<Task[]>;
+  getTasksByTeam(teamId: string): Promise<Task[]>;
+  getTasksByAdmin(adminId: string): Promise<Task[]>;
   getAllTasks(): Promise<Task[]>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: string, updates: Partial<InsertTask>): Promise<Task | undefined>;
   
-  // Meetings
-  getMeeting(id: string): Promise<Meeting | undefined>;
-  getAllMeetings(): Promise<Meeting[]>;
-  getMeetingsByIntern(internId: string): Promise<Meeting[]>;
-  createMeeting(meeting: InsertMeeting): Promise<Meeting>;
-  updateMeeting(id: string, updates: Partial<InsertMeeting>): Promise<Meeting | undefined>;
+  // Resources
+  getResource(id: string): Promise<Resource | undefined>;
+  getResourcesByTeam(teamId: string): Promise<Resource[]>;
+  getResourcesByAdmin(adminId: string): Promise<Resource[]>;
+  getAllResources(): Promise<Resource[]>;
+  createResource(resource: InsertResource): Promise<Resource>;
+  updateResource(id: string, updates: Partial<InsertResource>): Promise<Resource | undefined>;
   
   // Certificates
   getCertificate(id: string): Promise<Certificate | undefined>;
-  getCertificateByIntern(internId: string): Promise<Certificate | undefined>;
+  getCertificateByUser(userId: string): Promise<Certificate | undefined>;
   getAllCertificates(): Promise<Certificate[]>;
   createCertificate(certificate: InsertCertificate): Promise<Certificate>;
   updateCertificate(id: string, updates: Partial<InsertCertificate>): Promise<Certificate | undefined>;
   
   // Notifications
   getNotification(id: string): Promise<Notification | undefined>;
-  getNotificationsByIntern(internId: string): Promise<Notification[]>;
+  getNotificationsByUser(userId: string): Promise<Notification[]>;
   getAllNotifications(): Promise<Notification[]>;
   createNotification(notification: InsertNotification): Promise<Notification>;
   updateNotification(id: string, updates: Partial<InsertNotification>): Promise<Notification | undefined>;
@@ -60,16 +76,66 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeData() {
     try {
-      // Check if sample intern already exists
-      const existingIntern = await this.getInternByUsername("intern");
-      if (!existingIntern) {
+      // Check if super admin exists
+      const superAdmin = await this.getUserByUsername("Watcher");
+      if (!superAdmin) {
+        await this.createUser({
+          username: "Watcher",
+          password: "12345",
+          role: "superadmin",
+          name: "Super Admin",
+          email: "watcher@company.com",
+          teamId: null,
+          mobileNumber: null,
+          department: null,
+          profilePhoto: null,
+          startDate: null,
+          endDate: null,
+          progress: 0,
+          isActive: true,
+          attendanceCount: 0,
+        });
+      }
+
+      // Check if sample team exists
+      const existingTeam = await this.getTeamByAdmin("admin-1");
+      if (!existingTeam) {
+        // Create sample admin
+        const sampleAdmin = await this.createUser({
+          username: "admin",
+          password: "admin123",
+          role: "admin",
+          name: "John Manager",
+          email: "admin@company.com",
+          teamId: null,
+          mobileNumber: "+1234567890",
+          department: "Engineering",
+          profilePhoto: null,
+          startDate: null,
+          endDate: null,
+          progress: 0,
+          isActive: true,
+          attendanceCount: 0,
+        });
+
+        // Create sample team
+        const sampleTeam = await this.createTeam({
+          teamName: "Engineering Team",
+          adminId: sampleAdmin.id,
+        });
+
+        // Update admin with team ID
+        await this.updateUser(sampleAdmin.id, { teamId: sampleTeam.id });
+
         // Create sample intern
-        const sampleIntern = await this.createIntern({
+        const sampleIntern = await this.createUser({
           username: "intern",
           password: "intern123",
+          role: "intern",
           name: "Sarah Johnson",
-          email: "sarah.johnson@email.com",
-          mobileNumber: "+1234567890",
+          email: "sarah.johnson@company.com",
+          teamId: sampleTeam.id,
+          mobileNumber: "+1987654321",
           department: "Software Development",
           profilePhoto: null,
           startDate: "2024-06-01",
@@ -84,55 +150,48 @@ export class DatabaseStorage implements IStorage {
           title: "Build User Authentication System",
           description: "Implement user login and registration functionality using JWT tokens and secure password hashing.",
           priority: "high",
-          status: "todo",
+          status: "pending",
           dueDate: "2024-07-15",
+          assignedBy: sampleAdmin.id,
           assignedTo: sampleIntern.id,
+          teamId: sampleTeam.id,
+          isTeamTask: false,
         });
 
         await this.createTask({
-          title: "Design Database Schema",
-          description: "Create comprehensive database design for the application including user management and data relationships.",
+          title: "Team Meeting Preparation",
+          description: "Prepare presentation for weekly team meeting.",
           priority: "medium",
-          status: "progress",
+          status: "in-progress",
           dueDate: "2024-07-10",
-          assignedTo: sampleIntern.id,
+          assignedBy: sampleAdmin.id,
+          assignedTo: null,
+          teamId: sampleTeam.id,
+          isTeamTask: true,
         });
 
-        await this.createTask({
-          title: "Setup Development Environment",
-          description: "Install and configure all necessary development tools, IDEs, and project dependencies.",
-          priority: "high",
-          status: "completed",
-          dueDate: "2024-06-08",
-          assignedTo: sampleIntern.id,
+        // Create sample resources
+        await this.createResource({
+          title: "Weekly Team Meeting",
+          type: "meeting_link",
+          link: "https://meet.google.com/abc-defg-hij",
+          description: "Weekly progress review meeting",
+          uploadedBy: sampleAdmin.id,
+          teamId: sampleTeam.id,
         });
 
-        // Create sample meetings
-        await this.createMeeting({
-          title: "Weekly Progress Review",
-          description: "Discuss current project status, challenges, and upcoming milestones with the team lead.",
-          date: "2024-07-08",
-          time: "14:00",
-          duration: "1 hour",
-          platform: "Google Meet",
-          meetingLink: "https://meet.google.com/abc-defg-hij",
-          attendees: [sampleIntern.id],
-        });
-
-        await this.createMeeting({
-          title: "Project Kickoff Meeting",
-          description: "Introduction to the new project requirements and team collaboration guidelines.",
-          date: "2024-07-12",
-          time: "10:00",
-          duration: "1.5 hours",
-          platform: "Google Meet",
-          meetingLink: "https://meet.google.com/xyz-uvw-rst",
-          attendees: [sampleIntern.id],
+        await this.createResource({
+          title: "Development Guidelines",
+          type: "pdf",
+          fileUrl: "/documents/dev-guidelines.pdf",
+          description: "Company development standards and best practices",
+          uploadedBy: sampleAdmin.id,
+          teamId: sampleTeam.id,
         });
 
         // Create sample certificate
         await this.createCertificate({
-          internId: sampleIntern.id,
+          userId: sampleIntern.id,
           issuedDate: null,
           certificateUrl: null,
           isGenerated: false,
@@ -143,41 +202,75 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Intern methods
-  async getIntern(id: string): Promise<Intern | undefined> {
-    const [intern] = await db.select().from(interns).where(eq(interns.id, id));
-    return intern || undefined;
-  }
-
-  async getInternByEmail(email: string): Promise<Intern | undefined> {
-    const [intern] = await db.select().from(interns).where(eq(interns.email, email));
-    return intern || undefined;
-  }
-
-  async getInternByUsername(username: string): Promise<Intern | undefined> {
-    const [intern] = await db.select().from(interns).where(eq(interns.username, username));
-    return intern || undefined;
-  }
-
-  async authenticateIntern(username: string, password: string): Promise<Intern | undefined> {
-    const [intern] = await db.select().from(interns).where(
-      and(eq(interns.username, username), eq(interns.password, password))
+  // Authentication
+  async authenticateUser(username: string, password: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(
+      and(eq(users.username, username), eq(users.password, password))
     );
-    return intern || undefined;
+    return user || undefined;
   }
 
-  async getAllInterns(): Promise<Intern[]> {
-    return await db.select().from(interns);
+  // User methods
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
-  async createIntern(insertIntern: InsertIntern): Promise<Intern> {
-    const [intern] = await db.insert(interns).values(insertIntern).returning();
-    return intern;
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
   }
 
-  async updateIntern(id: string, updates: Partial<InsertIntern>): Promise<Intern | undefined> {
-    const [intern] = await db.update(interns).set(updates).where(eq(interns.id, id)).returning();
-    return intern || undefined;
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async getUsersByTeam(teamId: string): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.teamId, teamId));
+  }
+
+  async getUsersByRole(role: string): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, role));
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const [user] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
+    return user || undefined;
+  }
+
+  // Team methods
+  async getTeam(id: string): Promise<Team | undefined> {
+    const [team] = await db.select().from(teams).where(eq(teams.id, id));
+    return team || undefined;
+  }
+
+  async getAllTeams(): Promise<Team[]> {
+    return await db.select().from(teams);
+  }
+
+  async getTeamByAdmin(adminId: string): Promise<Team | undefined> {
+    const [team] = await db.select().from(teams).where(eq(teams.adminId, adminId));
+    return team || undefined;
+  }
+
+  async createTeam(insertTeam: InsertTeam): Promise<Team> {
+    const [team] = await db.insert(teams).values(insertTeam).returning();
+    return team;
+  }
+
+  async updateTeam(id: string, updates: Partial<InsertTeam>): Promise<Team | undefined> {
+    const [team] = await db.update(teams).set(updates).where(eq(teams.id, id)).returning();
+    return team || undefined;
   }
 
   // Task methods
@@ -186,8 +279,24 @@ export class DatabaseStorage implements IStorage {
     return task || undefined;
   }
 
-  async getTasksByIntern(internId: string): Promise<Task[]> {
-    return await db.select().from(tasks).where(eq(tasks.assignedTo, internId));
+  async getTasksByUser(userId: string): Promise<Task[]> {
+    const user = await this.getUser(userId);
+    if (!user) return [];
+    
+    return await db.select().from(tasks).where(
+      or(
+        eq(tasks.assignedTo, userId),
+        and(eq(tasks.teamId, user.teamId!), eq(tasks.isTeamTask, true))
+      )
+    );
+  }
+
+  async getTasksByTeam(teamId: string): Promise<Task[]> {
+    return await db.select().from(tasks).where(eq(tasks.teamId, teamId));
+  }
+
+  async getTasksByAdmin(adminId: string): Promise<Task[]> {
+    return await db.select().from(tasks).where(eq(tasks.assignedBy, adminId));
   }
 
   async getAllTasks(): Promise<Task[]> {
@@ -204,31 +313,32 @@ export class DatabaseStorage implements IStorage {
     return task || undefined;
   }
 
-  // Meeting methods
-  async getMeeting(id: string): Promise<Meeting | undefined> {
-    const [meeting] = await db.select().from(meetings).where(eq(meetings.id, id));
-    return meeting || undefined;
+  // Resource methods
+  async getResource(id: string): Promise<Resource | undefined> {
+    const [resource] = await db.select().from(resources).where(eq(resources.id, id));
+    return resource || undefined;
   }
 
-  async getAllMeetings(): Promise<Meeting[]> {
-    return await db.select().from(meetings);
+  async getResourcesByTeam(teamId: string): Promise<Resource[]> {
+    return await db.select().from(resources).where(eq(resources.teamId, teamId));
   }
 
-  async getMeetingsByIntern(internId: string): Promise<Meeting[]> {
-    const allMeetings = await db.select().from(meetings);
-    return allMeetings.filter(meeting => 
-      meeting.attendees?.includes(internId)
-    );
+  async getResourcesByAdmin(adminId: string): Promise<Resource[]> {
+    return await db.select().from(resources).where(eq(resources.uploadedBy, adminId));
   }
 
-  async createMeeting(insertMeeting: InsertMeeting): Promise<Meeting> {
-    const [meeting] = await db.insert(meetings).values(insertMeeting).returning();
-    return meeting;
+  async getAllResources(): Promise<Resource[]> {
+    return await db.select().from(resources);
   }
 
-  async updateMeeting(id: string, updates: Partial<InsertMeeting>): Promise<Meeting | undefined> {
-    const [meeting] = await db.update(meetings).set(updates).where(eq(meetings.id, id)).returning();
-    return meeting || undefined;
+  async createResource(insertResource: InsertResource): Promise<Resource> {
+    const [resource] = await db.insert(resources).values(insertResource).returning();
+    return resource;
+  }
+
+  async updateResource(id: string, updates: Partial<InsertResource>): Promise<Resource | undefined> {
+    const [resource] = await db.update(resources).set(updates).where(eq(resources.id, id)).returning();
+    return resource || undefined;
   }
 
   // Certificate methods
@@ -237,8 +347,8 @@ export class DatabaseStorage implements IStorage {
     return certificate || undefined;
   }
 
-  async getCertificateByIntern(internId: string): Promise<Certificate | undefined> {
-    const [certificate] = await db.select().from(certificates).where(eq(certificates.internId, internId));
+  async getCertificateByUser(userId: string): Promise<Certificate | undefined> {
+    const [certificate] = await db.select().from(certificates).where(eq(certificates.userId, userId));
     return certificate || undefined;
   }
 
@@ -262,8 +372,8 @@ export class DatabaseStorage implements IStorage {
     return notification || undefined;
   }
 
-  async getNotificationsByIntern(internId: string): Promise<Notification[]> {
-    return await db.select().from(notifications).where(eq(notifications.internId, internId));
+  async getNotificationsByUser(userId: string): Promise<Notification[]> {
+    return await db.select().from(notifications).where(eq(notifications.userId, userId));
   }
 
   async getAllNotifications(): Promise<Notification[]> {
@@ -278,6 +388,66 @@ export class DatabaseStorage implements IStorage {
   async updateNotification(id: string, updates: Partial<InsertNotification>): Promise<Notification | undefined> {
     const [notification] = await db.update(notifications).set(updates).where(eq(notifications.id, id)).returning();
     return notification || undefined;
+  }
+
+  // Legacy methods for backward compatibility
+  async getIntern(id: string): Promise<User | undefined> {
+    return this.getUser(id);
+  }
+
+  async getInternByUsername(username: string): Promise<User | undefined> {
+    return this.getUserByUsername(username);
+  }
+
+  async authenticateIntern(username: string, password: string): Promise<User | undefined> {
+    return this.authenticateUser(username, password);
+  }
+
+  async getAllInterns(): Promise<User[]> {
+    return this.getUsersByRole("intern");
+  }
+
+  async createIntern(intern: InsertUser): Promise<User> {
+    return this.createUser({ ...intern, role: "intern" });
+  }
+
+  async updateIntern(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
+    return this.updateUser(id, updates);
+  }
+
+  async getTasksByIntern(internId: string): Promise<Task[]> {
+    return this.getTasksByUser(internId);
+  }
+
+  async getAllMeetings(): Promise<Resource[]> {
+    return await db.select().from(resources).where(eq(resources.type, "meeting_link"));
+  }
+
+  async getMeetingsByIntern(internId: string): Promise<Resource[]> {
+    const user = await this.getUser(internId);
+    if (!user?.teamId) return [];
+    return await db.select().from(resources).where(
+      and(eq(resources.teamId, user.teamId), eq(resources.type, "meeting_link"))
+    );
+  }
+
+  async createMeeting(meeting: any): Promise<Resource> {
+    return this.createResource({
+      title: meeting.title,
+      type: "meeting_link",
+      link: meeting.meetingLink,
+      description: meeting.description,
+      uploadedBy: meeting.uploadedBy || "admin-1",
+      teamId: meeting.teamId || "team-1",
+    });
+  }
+
+  async getCertificateByIntern(internId: string): Promise<Certificate | undefined> {
+    return this.getCertificateByUser(internId);
+  }
+
+  async getNotificationsByIntern(internId: string): Promise<Notification[]> {
+    return this.getNotificationsByUser(internId);
   }
 }
 
