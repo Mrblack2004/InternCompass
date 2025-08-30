@@ -8,15 +8,15 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Task } from "@shared/schema";
 
 interface TasksTabProps {
-  internId: string;
+  userId: string;
 }
 
-export default function TasksTab({ internId }: TasksTabProps) {
+export default function TasksTab({ userId }: TasksTabProps) {
   const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
 
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
-    queryKey: ["/api/tasks/intern", internId],
+    queryKey: ["/api/tasks/user", userId],
   });
 
   const updateTaskMutation = useMutation({
@@ -24,7 +24,7 @@ export default function TasksTab({ internId }: TasksTabProps) {
       return apiRequest("PATCH", `/api/tasks/${taskId}`, { status });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks/intern", internId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/user", userId] });
       toast({
         title: "Task updated successfully",
         description: "Your task status has been updated.",

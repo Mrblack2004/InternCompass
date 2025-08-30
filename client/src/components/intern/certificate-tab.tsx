@@ -4,16 +4,16 @@ import { Button } from "@/components/ui/button";
 import type { Certificate, Task } from "@shared/schema";
 
 interface CertificateTabProps {
-  internId: string;
+  userId: string;
 }
 
-export default function CertificateTab({ internId }: CertificateTabProps) {
+export default function CertificateTab({ userId }: CertificateTabProps) {
   const { data: certificate, isLoading: certificateLoading } = useQuery<Certificate>({
-    queryKey: ["/api/certificates/intern", internId],
+    queryKey: ["/api/certificates/user", userId],
   });
 
   const { data: tasks = [] } = useQuery<Task[]>({
-    queryKey: ["/api/tasks/intern", internId],
+    queryKey: ["/api/tasks/user", userId],
   });
 
   if (certificateLoading) {

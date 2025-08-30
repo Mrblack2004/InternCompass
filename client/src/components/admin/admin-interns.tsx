@@ -6,8 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import type { Intern } from "@shared/schema";
 
 export default function AdminInterns() {
-  const { data: interns = [], isLoading } = useQuery<Intern[]>({
-    queryKey: ["/api/interns"],
+  const currentUserId = localStorage.getItem("userId") || "";
+  const teamId = localStorage.getItem("teamId") || "";
+
+  const { data: interns = [], isLoading } = useQuery<User[]>({
+    queryKey: ["/api/users/team", teamId],
+    enabled: !!teamId,
   });
 
   if (isLoading) {
@@ -27,7 +31,7 @@ export default function AdminInterns() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-slate-800">All Interns</h2>
           <Button data-testid="button-add-intern">
-            <i className="fas fa-plus mr-2"></i>Add Intern
+            <i className="fas fa-plus mr-2"></i>Add Team Member
           </Button>
         </div>
 
@@ -47,7 +51,7 @@ export default function AdminInterns() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {interns.map((intern) => (
+                  {interns.filter(user => user.role === "intern").map((intern) => (
                     <tr key={intern.id} className="hover:bg-slate-50">
                       <td className="p-4">
                         <div className="flex items-center gap-3">

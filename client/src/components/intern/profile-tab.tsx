@@ -5,19 +5,19 @@ import { Progress } from "@/components/ui/progress";
 import type { Intern, Task } from "@shared/schema";
 
 interface ProfileTabProps {
-  internId: string;
+  userId: string;
 }
 
-export default function ProfileTab({ internId }: ProfileTabProps) {
-  const { data: intern, isLoading: internLoading } = useQuery<Intern>({
-    queryKey: ["/api/interns", internId],
+export default function ProfileTab({ userId }: ProfileTabProps) {
+  const { data: user, isLoading: userLoading } = useQuery<User>({
+    queryKey: ["/api/users", userId],
   });
 
   const { data: tasks = [] } = useQuery<Task[]>({
-    queryKey: ["/api/tasks/intern", internId],
+    queryKey: ["/api/tasks/user", userId],
   });
 
-  if (internLoading) {
+  if (userLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-6">
@@ -28,12 +28,12 @@ export default function ProfileTab({ internId }: ProfileTabProps) {
     );
   }
 
-  if (!intern) {
+  if (!user) {
     return (
       <div className="p-6">
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-slate-600">Intern not found.</p>
+            <p className="text-slate-600">User not found.</p>
           </CardContent>
         </Card>
       </div>
@@ -56,43 +56,43 @@ export default function ProfileTab({ internId }: ProfileTabProps) {
                 </div>
               </div>
               <div className="flex-1">
-                <h3 data-testid="intern-name" className="text-xl font-semibold text-slate-800 mb-1">
-                  {intern.name}
+                <h3 data-testid="user-name" className="text-xl font-semibold text-slate-800 mb-1">
+                  {user.name}
                 </h3>
-                <p data-testid="intern-email" className="text-slate-600 mb-4">
-                  {intern.email}
+                <p data-testid="user-email" className="text-slate-600 mb-4">
+                  {user.email}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       Mobile Number
                     </label>
-                    <p data-testid="intern-mobile" className="text-slate-900">
-                      {intern.mobileNumber}
+                    <p data-testid="user-mobile" className="text-slate-900">
+                      {user.mobileNumber || "Not provided"}
                     </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       Department
                     </label>
-                    <p data-testid="intern-department" className="text-slate-900">
-                      {intern.department}
+                    <p data-testid="user-department" className="text-slate-900">
+                      {user.department || "Not assigned"}
                     </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       Internship Duration
                     </label>
-                    <p data-testid="intern-duration" className="text-slate-900">
-                      {intern.startDate} to {intern.endDate}
+                    <p data-testid="user-duration" className="text-slate-900">
+                      {user.startDate || "Not set"} to {user.endDate || "Not set"}
                     </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       Attendance Days
                     </label>
-                    <p data-testid="intern-attendance" className="text-slate-900">
-                      {intern.attendanceCount} days
+                    <p data-testid="user-attendance" className="text-slate-900">
+                      {user.attendanceCount} days
                     </p>
                   </div>
                 </div>
@@ -111,11 +111,11 @@ export default function ProfileTab({ internId }: ProfileTabProps) {
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="font-medium text-slate-700">Overall Progress</span>
-                  <span data-testid="intern-progress" className="text-slate-600">
-                    {intern.progress}%
+                  <span data-testid="user-progress" className="text-slate-600">
+                    {user.progress}%
                   </span>
                 </div>
-                <Progress value={intern.progress} className="w-full" />
+                <Progress value={user.progress} className="w-full" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 <div className="text-center p-4 bg-slate-50 rounded-lg">

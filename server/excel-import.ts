@@ -26,15 +26,17 @@ export async function importExcelData() {
           }
 
           // Check if intern already exists
-          const existingIntern = await storage.getInternByUsername(internData.username);
+          const existingIntern = await storage.getUserByUsername(internData.username);
           if (!existingIntern) {
-            await storage.createIntern({
+            await storage.createUser({
               username: internData.username,
               password: internData.password,
+              role: "intern",
               name: internData.name,
               email: internData.email,
               mobileNumber: internData.mobileNumber || "",
               department: internData.department || "General",
+              teamId: null,
               profilePhoto: null,
               startDate: internData.startDate || "2024-01-01",
               endDate: internData.endDate || "2024-12-31",
@@ -68,10 +70,12 @@ export async function importExcelData() {
       ];
       
       for (const internData of sampleData) {
-        const existingIntern = await storage.getInternByUsername(internData.username);
+        const existingIntern = await storage.getUserByUsername(internData.username);
         if (!existingIntern) {
-          await storage.createIntern({
+          await storage.createUser({
             ...internData,
+            role: "intern",
+            teamId: null,
             profilePhoto: null,
             progress: 0,
             isActive: true,

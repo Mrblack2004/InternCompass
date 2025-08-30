@@ -18,24 +18,33 @@ export default function AdminTasks() {
     priority: "medium",
     assignedTo: "",
     dueDate: "",
+    isTeamTask: false,
   });
   const { toast } = useToast();
+  const currentUserId = localStorage.getItem("userId") || "";
+  const teamId = localStorage.getItem("teamId") || "";
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({
-    queryKey: ["/api/tasks"],
+    queryKey: ["/api/tasks/admin", currentUserId],
+    enabled: !!currentUserId,
   });
 
-  const { data: interns = [] } = useQuery<Intern[]>({
-    queryKey: ["/api/interns"],
+  const { data: interns = [] } = useQuery<User[]>({
+    queryKey: ["/api/users/team", teamId],
+    enabled: !!teamId,
   });
 
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: typeof taskForm) => {
-      return apiRequest("POST", "/api/tasks", taskData);
+      return apiRequest("POST", "/api/tasks", {
+        ...taskData,
+        assignedBy: currentUserId,
+        teamId: teamId,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      setTaskForm({ title: "", description: "", priority: "medium", assignedTo: "", dueDate: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/admin", currentUserId] });
+      setTaskForm({ title: "", description: "", priority: "medium", assignedTo: "", dueDate: "", isTeamTask: false });
       setShowCreateForm(false);
       toast({
         title: "Task created successfully",
@@ -52,10 +61,10 @@ export default function AdminTasks() {
   });
 
   const handleCreateTask = () => {
-    if (!taskForm.title || !taskForm.description || !taskForm.assignedTo) {
+    if (!taskForm.title || !taskForm.description || (!taskForm.assignedTo && !taskForm.isTeamTask)) {
       toast({
         title: "Missing required fields",
-        description: "Please fill in all required fields.",
+        description: "Please fill in title, description, and either assign to someone or mark as team task.",
         variant: "destructive",
       });
       return;
@@ -139,23 +148,47 @@ export default function AdminTasks() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Assign To
+                    Assignment
                   </label>
-                  <Select 
-                    value={taskForm.assignedTo} 
-                    onValueChange={(value) => setTaskForm({ ...taskForm, assignedTo: value })}
-                  >
-                    <SelectTrigger data-testid="select-assign-to">
-                      <SelectValue placeholder="Select intern" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {interns.map((intern) => (
-                        <SelectItem key={intern.id} value={intern.id}>
-                          {intern.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="individual-task"
+                        name="taskType"
+                        checked={!taskForm.isTeamTask}
+                        onChange={() => setTaskForm({ ...taskForm, isTeamTask: false, assignedTo: "" })}
+                      />
+                      <label htmlFor="individual-task" className="text-sm">Individual Task</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="team-task"
+                        name="taskType"
+                        checked={taskForm.isTeamTask}
+                        onChange={() => setTaskForm({ ...taskForm, isTeamTask: true, assignedTo: "" })}
+                      />
+                      <label htmlFor="team-task" className="text-sm">Team Task</label>
+                    </div>
+                    {!taskForm.isTeamTask && (
+                      <Select 
+                        value={taskForm.assignedTo} 
+                        onValueChange={(value) => setTaskForm({ ...taskForm, assignedTo: value })}
+                      >
+                        <SelectTrigger data-testid="select-assign-to">
+                          <SelectValue placeholder="Select intern" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {interns.filter(user => user.role === "intern").map((intern) => (
+                            <SelectItem key={intern.id} value={intern.id}>
+                              {intern.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -231,13 +264,13 @@ export default function AdminTasks() {
                         {task.title}
                       </h4>
                       <p className="text-sm text-slate-600 mt-1">
-                        Assigned to: {assignedIntern?.name || "Unknown"} • Due: {task.dueDate || "No due date"}
+                        {task.isTeamTask ? "Team Task" : `Assigned to: ${assignedIntern?.name || "Unknown"}`} • Due: {task.dueDate || "No due date"}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <Badge className={getStatusColor(task.status)}>
-                        {task.status === "todo" ? "To Do" : 
-                         task.status === "progress" ? "In Progress" : 
+                        {task.status === "pending" ? "Pending" : 
+                         task.status === "in-progress" ? "In Progress" : 
                          "Completed"}
                       </Badge>
                       <Badge className={getPriorityColor(task.priority)}>

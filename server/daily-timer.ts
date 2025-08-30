@@ -31,18 +31,18 @@ export class DailyTimer {
 
   private async checkInternshipCompletion() {
     try {
-      const allInterns = await storage.getAllInterns();
+      const allInterns = await storage.getUsersByRole("intern");
       const today = new Date();
 
       for (const intern of allInterns) {
-        if (!intern.isActive) continue;
+        if (!intern.isActive || !intern.endDate) continue;
 
         const endDate = new Date(intern.endDate);
         
         // Check if internship has ended
         if (today >= endDate) {
           // Mark intern as inactive
-          await storage.updateIntern(intern.id, { isActive: false });
+          await storage.updateUser(intern.id, { isActive: false });
           
           // Generate certificate if eligible
           await ProgressCalculator.generateCertificateIfEligible(intern.id);
@@ -58,15 +58,15 @@ export class DailyTimer {
   // Method to manually mark attendance for an intern
   static async markAttendance(internId: string): Promise<void> {
     try {
-      const intern = await storage.getIntern(internId);
+      const intern = await storage.getUser(internId);
       if (!intern || !intern.isActive) return;
 
-      await storage.updateIntern(internId, {
+      await storage.updateUser(internId, {
         attendanceCount: intern.attendanceCount + 1
       });
 
       // Recalculate progress
-      await ProgressCalculator.calculateInternProgress(internId);
+      await ProgressCalculator.calculateUserProgress(internId);
       
       console.log(`Attendance marked for intern ${intern.name}`);
     } catch (error) {

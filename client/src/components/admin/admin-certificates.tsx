@@ -15,7 +15,8 @@ export default function AdminCertificates() {
   });
 
   const { data: interns = [] } = useQuery<Intern[]>({
-    queryKey: ["/api/interns"],
+    queryKey: ["/api/users/team", localStorage.getItem("teamId")],
+    enabled: !!localStorage.getItem("teamId"),
   });
 
   const generateCertificateMutation = useMutation({
@@ -140,7 +141,7 @@ export default function AdminCertificates() {
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {certificates.map((certificate) => {
-                    const intern = interns.find(i => i.id === certificate.internId);
+                    const intern = interns.find(i => i.id === certificate.userId);
                     return (
                       <tr key={certificate.id} className="hover:bg-slate-50">
                         <td className="p-4">

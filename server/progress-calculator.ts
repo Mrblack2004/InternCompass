@@ -1,83 +1,148 @@
-import { storage } from "./storage";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import type { Intern, Task } from "@shared/schema";
 
-export class ProgressCalculator {
-  static async calculateInternProgress(internId: string): Promise<number> {
-    try {
-      const tasks = await storage.getTasksByIntern(internId);
-      const intern = await storage.getIntern(internId);
-      
-      if (!intern || tasks.length === 0) return 0;
-      
-      // Calculate task completion progress (70% weight)
-      const completedTasks = tasks.filter(task => task.status === "completed").length;
-      const taskProgress = (completedTasks / tasks.length) * 70;
-      
-      // Calculate attendance progress (30% weight)
-      const internshipDuration = this.calculateInternshipDays(intern.startDate, intern.endDate);
-      const attendanceProgress = Math.min((intern.attendanceCount / internshipDuration) * 30, 30);
-      
-      const totalProgress = Math.round(taskProgress + attendanceProgress);
-      
-      // Update progress in database
-      await storage.updateIntern(internId, { progress: totalProgress });
-      
-      return totalProgress;
-    } catch (error) {
-      console.error("Error calculating progress:", error);
-      return 0;
-    }
+interface ProfileTabProps {
+  userId: string;
+}
+
+export default function ProfileTab({ userId }: ProfileTabProps) {
+  const { data: user, isLoading: userLoading } = useQuery<User>({
+    queryKey: ["/api/users", userId],
+  });
+
+  const { data: tasks = [] } = useQuery<Task[]>({
+    queryKey: ["/api/tasks/user", userId],
+  });
+
+  if (userLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="bg-white rounded-xl h-48"></div>
+          <div className="bg-white rounded-xl h-64"></div>
+        </div>
+      </div>
+    );
   }
-  
-  static calculateInternshipDays(startDate: string, endDate: string): number {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (!user) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-slate-600">User not found.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
-  
-  static async checkCertificateEligibility(internId: string): Promise<boolean> {
-    try {
-      const intern = await storage.getIntern(internId);
-      if (!intern) return false;
-      
-      const today = new Date();
-      const endDate = new Date(intern.endDate);
-      
-      // Check if internship has ended and progress is >= 80%
-      return today >= endDate && intern.progress >= 80;
-    } catch (error) {
-      console.error("Error checking certificate eligibility:", error);
-      return false;
-    }
-  }
-  
-  static async generateCertificateIfEligible(internId: string): Promise<void> {
-    try {
-      const isEligible = await this.checkCertificateEligibility(internId);
-      if (!isEligible) return;
-      
-      const certificate = await storage.getCertificateByIntern(internId);
-      if (certificate && !certificate.isGenerated) {
-        const today = new Date().toISOString().split('T')[0];
-        const certificateUrl = `/certificates/${internId}_certificate.pdf`;
-        
-        await storage.updateCertificate(certificate.id, {
-          isGenerated: true,
-          issuedDate: today,
-          certificateUrl: certificateUrl
-        });
-        
-        // Create notification
-        await storage.createNotification({
-          internId: internId,
-          type: "certificate",
-          title: "Certificate Generated",
-          message: "Your internship certificate has been automatically generated and is ready for download!",
-          isRead: false
-        });
-      }
-    } catch (error) {
-      console.error("Error generating certificate:", error);
-    }
-  }
+
+  const completedTasks = tasks.filter(t => t.status === "completed").length;
+  const activeTasks = tasks.filter(t => t.status !== "completed").length;
+
+  return (
+    <div className="p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Profile Card */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-shrink-0">
+                <div className="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center">
+                  <i className="fas fa-user text-slate-500 text-2xl"></i>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 data-testid="user-name" className="text-xl font-semibold text-slate-800 mb-1">
+                  {user.name}
+                </h3>
+                <p data-testid="user-email" className="text-slate-600 mb-4">
+                  {user.email}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Mobile Number
+                    </label>
+                    <p data-testid="user-mobile" className="text-slate-900">
+                      {user.mobileNumber || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Department
+                    </label>
+                    <p data-testid="user-department" className="text-slate-900">
+                      {user.department || "Not assigned"}
+                    </p>
+                  </div>
+                  {user.startDate && user.endDate && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Internship Duration
+                    </label>
+                    <p data-testid="user-duration" className="text-slate-900">
+                      {user.startDate} to {user.endDate}
+                    </p>
+                  </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Attendance Days
+                    </label>
+                    <p data-testid="user-attendance" className="text-slate-900">
+                      {user.attendanceCount} days
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Progress Overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Progress Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="font-medium text-slate-700">Overall Progress</span>
+                  <span data-testid="user-progress" className="text-slate-600">
+                    {user.progress}%
+                  </span>
+                </div>
+                <Progress value={user.progress} className="w-full" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <div data-testid="stat-completed-tasks" className="text-2xl font-bold text-primary">
+                    {completedTasks}
+                  </div>
+                  <div className="text-sm text-slate-600">Tasks Completed</div>
+                </div>
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <div data-testid="stat-active-tasks" className="text-2xl font-bold text-warning">
+                    {activeTasks}
+                  </div>
+                  <div className="text-sm text-slate-600">Active Tasks</div>
+                </div>
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <div className="text-2xl font-bold text-success">12</div>
+                  <div className="text-sm text-slate-600">Meetings Attended</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+
+      </div>
+    </div>
+  );
 }
