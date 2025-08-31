@@ -4,11 +4,14 @@ import ProfileTab from "@/components/intern/profile-tab";
 import TasksTab from "@/components/intern/tasks-tab";
 import ResourcesTab from "@/components/intern/resources-tab";
 import CertificateTab from "@/components/intern/certificate-tab";
+import NotificationsPanel from "@/components/intern/notifications-panel";
+import RealTimeNotifications from "@/components/real-time-notifications";
 import { useQuery } from "@tanstack/react-query";
 import type { Notification } from "@shared/schema";
 
 export default function InternDashboard() {
   const [activeTab, setActiveTab] = useState("profile");
+  const [showNotifications, setShowNotifications] = useState(false);
   const currentUserId = localStorage.getItem("userId") || "";
 
   const { data: notifications = [] } = useQuery<Notification[]>({
@@ -46,15 +49,39 @@ export default function InternDashboard() {
 
   return (
     <div className="flex h-screen bg-slate-50">
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 px-4 py-3 z-40">
+        <div className="flex items-center justify-between">
+          <Sidebar mode="intern" activeTab={activeTab} onTabChange={setActiveTab} />
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-semibold text-slate-800">InternTrack</h1>
+            <button 
+              onClick={() => setShowNotifications(true)}
+              className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+            >
+              <i className="fas fa-bell"></i>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+            <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center">
+              <i className="fas fa-user text-slate-600 text-sm"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Sidebar
         mode="intern"
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden md:mt-0 mt-16">
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-6 py-4">
+        <header className="hidden md:block bg-white border-b border-slate-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 data-testid="page-title" className="text-xl font-semibold text-slate-800">
@@ -67,6 +94,7 @@ export default function InternDashboard() {
             <div className="flex items-center gap-3">
               {/* Notification Bell */}
               <button 
+                onClick={() => setShowNotifications(true)}
                 data-testid="button-notifications"
                 className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
               >
@@ -86,9 +114,19 @@ export default function InternDashboard() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-slate-50">
           {renderTabContent()}
         </main>
+
+        {/* Notifications Panel */}
+        <NotificationsPanel
+          userId={currentUserId}
+          isOpen={showNotifications}
+          onClose={() => setShowNotifications(false)}
+        />
+
+        {/* Real-time notifications */}
+        <RealTimeNotifications userId={currentUserId} />
       </div>
     </div>
   );

@@ -40,19 +40,21 @@ export default function CertificateTab({ userId }: CertificateTabProps) {
     {
       id: "meetings",
       text: "Attend all scheduled meetings",
-      completed: true, // Simplified for demo
+      completed: completionPercentage >= 70, // Simplified calculation
     },
     {
       id: "evaluation",
       text: "Complete final evaluation",
-      completed: false,
+      completed: completionPercentage >= 90,
     },
     {
       id: "approval",
       text: "Supervisor approval",
-      completed: false,
+      completed: hasCompletedRequiredTasks && completionPercentage >= 90,
     },
   ];
+
+  const allRequirementsMet = requirements.every(req => req.completed);
 
   return (
     <div className="p-6">
@@ -82,13 +84,29 @@ export default function CertificateTab({ userId }: CertificateTabProps) {
                 <p className="text-slate-600 mb-6">
                   Congratulations! Your internship certificate is ready for download.
                 </p>
-                <Button 
-                  size="lg"
-                  data-testid="button-download-certificate"
-                >
-                  <i className="fas fa-download mr-2"></i>
-                  Download Certificate
-                </Button>
+                <div className="space-y-4">
+                  <Button 
+                    size="lg"
+                    data-testid="button-download-certificate"
+                    asChild
+                  >
+                    <a href={certificate.certificateUrl || "#"} download>
+                      <i className="fas fa-download mr-2"></i>
+                      Download Certificate
+                    </a>
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="lg"
+                    data-testid="button-view-certificate"
+                    asChild
+                  >
+                    <a href={certificate.certificateUrl || "#"} target="_blank" rel="noopener noreferrer">
+                      <i className="fas fa-eye mr-2"></i>
+                      View Certificate
+                    </a>
+                  </Button>
+                </div>
                 <div className="mt-4 p-4 bg-green-50 rounded-lg">
                   <p className="text-sm text-green-800">
                     <i className="fas fa-check-circle mr-2"></i>
@@ -100,14 +118,21 @@ export default function CertificateTab({ userId }: CertificateTabProps) {
               // Certificate Pending
               <div className="text-center">
                 <div className="mb-6">
-                  <div className="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-hourglass-half text-yellow-500 text-2xl"></i>
+                  <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                    allRequirementsMet ? "bg-green-50" : "bg-yellow-50"
+                  }`}>
+                    <i className={`fas ${
+                      allRequirementsMet ? "fa-check text-green-500" : "fa-hourglass-half text-yellow-500"
+                    } text-2xl`}></i>
                   </div>
                   <h3 data-testid="certificate-status-title" className="text-lg font-semibold text-slate-800 mb-2">
-                    Certificate Pending
+                    {allRequirementsMet ? "Certificate Processing" : "Certificate Pending"}
                   </h3>
                   <p className="text-slate-600 mb-6">
-                    Complete all assigned tasks and meet evaluation requirements to receive your certificate.
+                    {allRequirementsMet 
+                      ? "All requirements met! Your certificate will be generated soon."
+                      : "Complete all assigned tasks and meet evaluation requirements to receive your certificate."
+                    }
                   </p>
                 </div>
 
@@ -141,7 +166,7 @@ export default function CertificateTab({ userId }: CertificateTabProps) {
                 <div className="mt-8 p-4 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-800">
                     <i className="fas fa-info-circle mr-2"></i>
-                    Expected completion: August 30, 2024
+                    Progress: {completedTasks} of {totalTasks} tasks completed ({Math.round(completionPercentage)}%)
                   </p>
                 </div>
               </div>

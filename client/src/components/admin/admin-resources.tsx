@@ -73,6 +73,14 @@ export default function AdminResources() {
       return;
     }
 
+    if (resourceForm.type !== "meeting_link" && !resourceForm.fileUrl) {
+      toast({
+        title: "Missing file URL",
+        description: "Please enter a file URL for the document.",
+        variant: "destructive",
+      });
+      return;
+    }
     createResourceMutation.mutate(resourceForm);
   };
 

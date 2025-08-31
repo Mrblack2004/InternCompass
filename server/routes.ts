@@ -311,6 +311,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mark attendance endpoint
+  app.post("/api/users/:id/attendance", async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      await storage.updateUser(req.params.id, {
+        attendanceCount: user.attendanceCount + 1
+      });
+
+      // Recalculate progress
+      const { ProgressCalculator } = await import("./progress-calculator");
+      await ProgressCalculator.calculateUserProgress(req.params.id);
+
+      res.json({ message: "Attendance marked successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark attendance" });
+    }
+  });
+
   // Super Admin specific routes
   app.get("/api/superadmin/overview", async (req, res) => {
     try {

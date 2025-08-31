@@ -4,6 +4,7 @@ import AdminOverview from "@/components/admin/admin-overview";
 import AdminInterns from "@/components/admin/admin-interns";
 import AdminTasks from "@/components/admin/admin-tasks";
 import AdminResources from "@/components/admin/admin-resources";
+import TeamManagement from "@/components/admin/team-management";
 import { useLocation } from "wouter";
 
 export default function AdminDashboard() {
@@ -20,6 +21,8 @@ export default function AdminDashboard() {
         return <AdminTasks />;
       case "admin-resources":
         return <AdminResources />;
+      case "admin-team":
+        return <TeamManagement />;
       default:
         return <AdminOverview />;
     }
@@ -31,6 +34,7 @@ export default function AdminDashboard() {
       "admin-interns": { title: "All Interns", subtitle: "Manage intern profiles and progress" },
       "admin-tasks": { title: "Task Management", subtitle: "Create and assign tasks to interns" },
       "admin-resources": { title: "Resource Management", subtitle: "Upload and manage team resources" },
+      "admin-team": { title: "Team Management", subtitle: "Add and manage team members" },
     };
     return titles[activeTab as keyof typeof titles] || titles["admin-overview"];
   };
@@ -39,15 +43,28 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-slate-50">
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 px-4 py-3 z-40">
+        <div className="flex items-center justify-between">
+          <Sidebar mode="admin" activeTab={activeTab} onTabChange={setActiveTab} />
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-semibold text-slate-800">InternTrack</h1>
+            <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center">
+              <i className="fas fa-user text-slate-600 text-sm"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Sidebar
         mode="admin"
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden md:mt-0 mt-16">
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-6 py-4">
+        <header className="hidden md:block bg-white border-b border-slate-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 data-testid="page-title" className="text-xl font-semibold text-slate-800">
@@ -67,7 +84,7 @@ export default function AdminDashboard() {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-slate-50">
           {renderTabContent()}
         </main>
       </div>

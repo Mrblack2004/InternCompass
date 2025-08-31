@@ -61,14 +61,24 @@ export default function AdminTasks() {
   });
 
   const handleCreateTask = () => {
-    if (!taskForm.title || !taskForm.description || (!taskForm.assignedTo && !taskForm.isTeamTask)) {
+    if (!taskForm.title || !taskForm.description) {
       toast({
         title: "Missing required fields",
-        description: "Please fill in title, description, and either assign to someone or mark as team task.",
+        description: "Please fill in title and description.",
         variant: "destructive",
       });
       return;
     }
+    
+    if (!taskForm.isTeamTask && !taskForm.assignedTo) {
+      toast({
+        title: "Assignment required",
+        description: "Please either assign to someone or mark as team task.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     createTaskMutation.mutate(taskForm);
   };
 
@@ -269,12 +279,12 @@ export default function AdminTasks() {
                     </div>
                     <div className="flex items-center gap-3">
                       <Badge className={getStatusColor(task.status)}>
-                        {task.status === "pending" ? "Pending" : 
-                         task.status === "in-progress" ? "In Progress" : 
-                         "Completed"}
+                        {task.status === "todo" ? "To Do" : 
+                         task.status === "progress" ? "In Progress" : 
+                         task.status === "completed" ? "Completed" : task.status}
                       </Badge>
                       <Badge className={getPriorityColor(task.priority)}>
-                        {task.priority}
+                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                       </Badge>
                       <Button 
                         variant="ghost" 

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import AttendanceTracker from "@/components/attendance-tracker";
 import type { Intern, Task } from "@shared/schema";
 
 interface ProfileTabProps {
@@ -102,42 +103,50 @@ export default function ProfileTab({ userId }: ProfileTabProps) {
         </Card>
 
         {/* Progress Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Progress Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="font-medium text-slate-700">Overall Progress</span>
-                  <span data-testid="user-progress" className="text-slate-600">
-                    {user.progress}%
-                  </span>
-                </div>
-                <Progress value={user.progress} className="w-full" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <div data-testid="stat-completed-tasks" className="text-2xl font-bold text-primary">
-                    {completedTasks}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Progress Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="font-medium text-slate-700">Overall Progress</span>
+                      <span data-testid="user-progress" className="text-slate-600">
+                        {user.progress}%
+                      </span>
+                    </div>
+                    <Progress value={user.progress} className="w-full" />
                   </div>
-                  <div className="text-sm text-slate-600">Tasks Completed</div>
-                </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <div data-testid="stat-active-tasks" className="text-2xl font-bold text-warning">
-                    {activeTasks}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <div data-testid="stat-completed-tasks" className="text-2xl font-bold text-primary">
+                        {completedTasks}
+                      </div>
+                      <div className="text-sm text-slate-600">Tasks Completed</div>
+                    </div>
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <div data-testid="stat-active-tasks" className="text-2xl font-bold text-warning">
+                        {activeTasks}
+                      </div>
+                      <div className="text-sm text-slate-600">Active Tasks</div>
+                    </div>
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <div className="text-2xl font-bold text-success">{user.attendanceCount}</div>
+                      <div className="text-sm text-slate-600">Days Present</div>
+                    </div>
                   </div>
-                  <div className="text-sm text-slate-600">Active Tasks</div>
                 </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <div className="text-2xl font-bold text-success">12</div>
-                  <div className="text-sm text-slate-600">Meetings Attended</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div>
+            <AttendanceTracker userId={user.id} currentAttendance={user.attendanceCount} />
+          </div>
+        </div>
 
 
       </div>

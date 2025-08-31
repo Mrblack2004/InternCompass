@@ -44,16 +44,16 @@ export default function TasksTab({ userId }: TasksTabProps) {
     
     switch (currentStatus) {
       case "todo":
-        newStatus = "progress";
+        newStatus = "in-progress";
         break;
-      case "progress":
+      case "in-progress":
         newStatus = "completed";
         break;
       case "completed":
         newStatus = "todo";
         break;
       default:
-        newStatus = "progress";
+        newStatus = "in-progress";
     }
     
     updateTaskMutation.mutate({ taskId, status: newStatus });
@@ -68,7 +68,7 @@ export default function TasksTab({ userId }: TasksTabProps) {
     switch (status) {
       case "completed":
         return "bg-green-100 text-green-800";
-      case "progress":
+      case "in-progress":
         return "bg-blue-100 text-blue-800";
       case "todo":
         return "bg-yellow-100 text-yellow-800";
@@ -81,7 +81,7 @@ export default function TasksTab({ userId }: TasksTabProps) {
     switch (status) {
       case "completed":
         return "fas fa-check";
-      case "progress":
+      case "in-progress":
         return "fas fa-spinner fa-spin";
       case "todo":
         return "fas fa-circle";
@@ -94,7 +94,7 @@ export default function TasksTab({ userId }: TasksTabProps) {
     switch (status) {
       case "todo":
         return "To Do";
-      case "progress":
+      case "in-progress":
         return "In Progress";
       case "completed":
         return "Completed";
@@ -153,7 +153,7 @@ export default function TasksTab({ userId }: TasksTabProps) {
               <Button
                 variant={statusFilter === "progress" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setStatusFilter("progress")}
+                onClick={() => setStatusFilter("in-progress")}
                 data-testid="filter-progress"
               >
                 In Progress
@@ -183,7 +183,7 @@ export default function TasksTab({ userId }: TasksTabProps) {
                       className={`w-5 h-5 border-2 rounded transition-colors ${
                         task.status === "completed"
                           ? "bg-success border-success"
-                          : task.status === "progress"
+                          : task.status === "in-progress"
                           ? "bg-primary border-primary"
                           : "border-slate-300 hover:border-primary"
                       }`}
@@ -232,7 +232,7 @@ export default function TasksTab({ userId }: TasksTabProps) {
                 <p className="text-slate-600">
                   {statusFilter === "all" 
                     ? "No tasks assigned yet." 
-                    : `No ${statusFilter === "todo" ? "to do" : statusFilter} tasks.`}
+                    : `No ${statusFilter === "todo" ? "to do" : statusFilter === "in-progress" ? "in progress" : statusFilter} tasks.`}
                 </p>
               </CardContent>
             </Card>
