@@ -1,148 +1,82 @@
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import type { Intern, Task } from "@shared/schema";
+import type { User, Task } from "@shared/schema";
 
-interface ProfileTabProps {
-  userId: string;
-}
-
-export default function ProfileTab({ userId }: ProfileTabProps) {
-  const { data: user, isLoading: userLoading } = useQuery<User>({
-    queryKey: ["/api/users", userId],
-  });
-
-  const { data: tasks = [] } = useQuery<Task[]>({
-    queryKey: ["/api/tasks/user", userId],
-  });
-
-  if (userLoading) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="bg-white rounded-xl h-48"></div>
-          <div className="bg-white rounded-xl h-64"></div>
-        </div>
-      </div>
-    );
+export class ProgressCalculator {
+  /**
+   * Calculate overall progress percentage for a user based on completed tasks
+   */
+  static calculateUserProgress(tasks: Task[]): number {
+    if (tasks.length === 0) return 0;
+    
+    const completedTasks = tasks.filter(task => task.status === "completed").length;
+    return Math.round((completedTasks / tasks.length) * 100);
   }
 
-  if (!user) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-slate-600">User not found.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  /**
+   * Calculate team progress statistics
+   */
+  static calculateTeamProgress(teamTasks: Task[]) {
+    const totalTasks = teamTasks.length;
+    const completedTasks = teamTasks.filter(task => task.status === "completed").length;
+    const inProgressTasks = teamTasks.filter(task => task.status === "in-progress").length;
+    const pendingTasks = teamTasks.filter(task => task.status === "pending").length;
+
+    return {
+      totalTasks,
+      completedTasks,
+      inProgressTasks,
+      pendingTasks,
+      completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+    };
   }
 
-  const completedTasks = tasks.filter(t => t.status === "completed").length;
-  const activeTasks = tasks.filter(t => t.status !== "completed").length;
+  /**
+   * Check if user is eligible for certificate based on progress
+   */
+  static isEligibleForCertificate(user: User, tasks: Task[]): boolean {
+    const progress = this.calculateUserProgress(tasks);
+    const minimumAttendance = 20; // minimum days
+    
+    return progress >= 80 && user.attendanceCount >= minimumAttendance;
+  }
 
-  return (
-    <div className="p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Profile Card */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex-shrink-0">
-                <div className="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center">
-                  <i className="fas fa-user text-slate-500 text-2xl"></i>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 data-testid="user-name" className="text-xl font-semibold text-slate-800 mb-1">
-                  {user.name}
-                </h3>
-                <p data-testid="user-email" className="text-slate-600 mb-4">
-                  {user.email}
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Mobile Number
-                    </label>
-                    <p data-testid="user-mobile" className="text-slate-900">
-                      {user.mobileNumber || "Not provided"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Department
-                    </label>
-                    <p data-testid="user-department" className="text-slate-900">
-                      {user.department || "Not assigned"}
-                    </p>
-                  </div>
-                  {user.startDate && user.endDate && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Internship Duration
-                    </label>
-                    <p data-testid="user-duration" className="text-slate-900">
-                      {user.startDate} to {user.endDate}
-                    </p>
-                  </div>
-                  )}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Attendance Days
-                    </label>
-                    <p data-testid="user-attendance" className="text-slate-900">
-                      {user.attendanceCount} days
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  /**
+   * Generate certificate data for eligible users
+   */
+  static generateCertificateData(user: User, tasks: Task[]) {
+    if (!this.isEligibleForCertificate(user, tasks)) {
+      throw new Error("User is not eligible for certificate");
+    }
 
-        {/* Progress Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Progress Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="font-medium text-slate-700">Overall Progress</span>
-                  <span data-testid="user-progress" className="text-slate-600">
-                    {user.progress}%
-                  </span>
-                </div>
-                <Progress value={user.progress} className="w-full" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <div data-testid="stat-completed-tasks" className="text-2xl font-bold text-primary">
-                    {completedTasks}
-                  </div>
-                  <div className="text-sm text-slate-600">Tasks Completed</div>
-                </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <div data-testid="stat-active-tasks" className="text-2xl font-bold text-warning">
-                    {activeTasks}
-                  </div>
-                  <div className="text-sm text-slate-600">Active Tasks</div>
-                </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <div className="text-2xl font-bold text-success">12</div>
-                  <div className="text-sm text-slate-600">Meetings Attended</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    const progress = this.calculateUserProgress(tasks);
+    const completedTasks = tasks.filter(task => task.status === "completed").length;
 
+    return {
+      userName: user.name,
+      department: user.department,
+      startDate: user.startDate,
+      endDate: user.endDate,
+      progress,
+      completedTasks,
+      attendanceDays: user.attendanceCount,
+      issueDate: new Date().toISOString().split('T')[0]
+    };
+  }
 
-      </div>
-    </div>
-  );
+  /**
+   * Get progress summary for dashboard display
+   */
+  static getProgressSummary(user: User, tasks: Task[]) {
+    const progress = this.calculateUserProgress(tasks);
+    const completedTasks = tasks.filter(task => task.status === "completed").length;
+    const activeTasks = tasks.filter(task => task.status !== "completed").length;
+
+    return {
+      progress,
+      completedTasks,
+      activeTasks,
+      totalTasks: tasks.length,
+      attendanceDays: user.attendanceCount,
+      isEligibleForCertificate: this.isEligibleForCertificate(user, tasks)
+    };
+  }
 }
