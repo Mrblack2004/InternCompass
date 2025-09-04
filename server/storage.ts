@@ -76,9 +76,12 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeData() {
     try {
+      console.log("Initializing database with sample data...");
+      
       // Check if super admin exists
       const superAdmin = await this.getUserByUsername("Watcher");
       if (!superAdmin) {
+        console.log("Creating super admin...");
         await this.createUser({
           username: "Watcher",
           password: "12345",
@@ -95,13 +98,15 @@ export class DatabaseStorage implements IStorage {
           isActive: true,
           attendanceCount: 0,
         });
+        console.log("✓ Super admin created");
       }
 
       // Check if sample team exists
-      const existingTeam = await this.getTeamByAdmin("admin-1");
-      if (!existingTeam) {
+      const sampleAdmin = await this.getUserByUsername("admin");
+      if (!sampleAdmin) {
+        console.log("Creating sample admin and team...");
         // Create sample admin
-        const sampleAdmin = await this.createUser({
+        const newAdmin = await this.createUser({
           username: "admin",
           password: "admin123",
           role: "admin",
@@ -117,15 +122,17 @@ export class DatabaseStorage implements IStorage {
           isActive: true,
           attendanceCount: 0,
         });
+        console.log("✓ Sample admin created");
 
         // Create sample team
         const sampleTeam = await this.createTeam({
           teamName: "Engineering Team",
-          adminId: sampleAdmin.id,
+          adminId: newAdmin.id,
         });
+        console.log("✓ Sample team created");
 
         // Update admin with team ID
-        await this.updateUser(sampleAdmin.id, { teamId: sampleTeam.id });
+        await this.updateUser(newAdmin.id, { teamId: sampleTeam.id });
 
         // Create sample intern
         const sampleIntern = await this.createUser({
