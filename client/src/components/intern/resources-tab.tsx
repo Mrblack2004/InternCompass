@@ -104,12 +104,12 @@ export default function ResourcesTab({ userId }: ResourcesTabProps) {
                           rel="noopener noreferrer"
                           className="flex items-center"
                         >
-                          <i className="fas fa-external-link-alt mr-2"></i>Join
+                          <i className="fas fa-video mr-2"></i>Join Meeting
                         </a>
                       </Button>
                     ) : (
                       <Button disabled>
-                        <i className="fas fa-external-link-alt mr-2"></i>Join
+                        <i className="fas fa-video mr-2"></i>Join Meeting
                       </Button>
                     )}
                   </div>

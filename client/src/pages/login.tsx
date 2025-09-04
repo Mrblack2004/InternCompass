@@ -22,6 +22,8 @@ export default function Login() {
 
     setIsLoading(true);
     setError("");
+    
+    console.log("Attempting login with:", { username, password: "***" });
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -34,6 +36,7 @@ export default function Login() {
 
       if (response.ok) {
         const user = await response.json();
+        console.log("Login successful:", user);
         
         // Store user data in localStorage
         localStorage.setItem("userId", user.id);
@@ -64,9 +67,11 @@ export default function Login() {
         });
       } else {
         const errorData = await response.json();
+        console.error("Login failed:", errorData);
         setError(errorData.message || "Invalid credentials");
       }
     } catch (error) {
+      console.error("Login error:", error);
       setError("Login failed. Please try again.");
     } finally {
       setIsLoading(false);

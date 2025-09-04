@@ -199,9 +199,12 @@ export class DatabaseStorage implements IStorage {
         // Create sample certificate
         await this.createCertificate({
           userId: sampleIntern.id,
-          issuedDate: null,
+          const tasks = await storage.getTasksByUser(intern.id);
+          await ProgressCalculator.generateCertificateIfEligible(intern.id, tasks);
           certificateUrl: null,
-          isGenerated: false,
+      const tasks = await storage.getTasksByUser(internId);
+      const newProgress = ProgressCalculator.calculateUserProgress(tasks);
+      await storage.updateUser(internId, { progress: newProgress });
         });
       }
     } catch (error) {

@@ -151,6 +151,7 @@ export class DatabaseStorage implements IStorage {
           isActive: true,
           attendanceCount: 45,
         });
+        console.log("✓ Sample intern created");
 
         // Create sample tasks
         await this.createTask({
@@ -159,7 +160,7 @@ export class DatabaseStorage implements IStorage {
           priority: "high",
           status: "pending",
           dueDate: "2024-07-15",
-          assignedBy: sampleAdmin.id,
+          assignedBy: newAdmin.id,
           assignedTo: sampleIntern.id,
           teamId: sampleTeam.id,
           isTeamTask: false,
@@ -169,13 +170,14 @@ export class DatabaseStorage implements IStorage {
           title: "Team Meeting Preparation",
           description: "Prepare presentation for weekly team meeting.",
           priority: "medium",
-          status: "in-progress",
+          status: "in_progress",
           dueDate: "2024-07-10",
-          assignedBy: sampleAdmin.id,
+          assignedBy: newAdmin.id,
           assignedTo: null,
           teamId: sampleTeam.id,
           isTeamTask: true,
         });
+        console.log("✓ Sample tasks created");
 
         // Create sample resources
         await this.createResource({
@@ -183,7 +185,7 @@ export class DatabaseStorage implements IStorage {
           type: "meeting_link",
           link: "https://meet.google.com/abc-defg-hij",
           description: "Weekly progress review meeting",
-          uploadedBy: sampleAdmin.id,
+          uploadedBy: newAdmin.id,
           teamId: sampleTeam.id,
         });
 
@@ -192,9 +194,10 @@ export class DatabaseStorage implements IStorage {
           type: "pdf",
           fileUrl: "/documents/dev-guidelines.pdf",
           description: "Company development standards and best practices",
-          uploadedBy: sampleAdmin.id,
+          uploadedBy: newAdmin.id,
           teamId: sampleTeam.id,
         });
+        console.log("✓ Sample resources created");
 
         // Create sample certificate
         await this.createCertificate({
@@ -203,7 +206,12 @@ export class DatabaseStorage implements IStorage {
           certificateUrl: null,
           isGenerated: false,
         });
+        console.log("✓ Sample certificate created");
+      } else {
+        console.log("Sample data already exists");
       }
+      
+      console.log("Database initialization completed successfully");
     } catch (error) {
       console.error("Error initializing data:", error);
     }
@@ -211,9 +219,11 @@ export class DatabaseStorage implements IStorage {
 
   // Authentication
   async authenticateUser(username: string, password: string): Promise<User | undefined> {
+    console.log("Authenticating user:", username);
     const [user] = await db.select().from(users).where(
       and(eq(users.username, username), eq(users.password, password))
     );
+    console.log("Database query result:", user ? "User found" : "User not found");
     return user || undefined;
   }
 

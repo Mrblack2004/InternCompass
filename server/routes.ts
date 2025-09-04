@@ -22,12 +22,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
+      console.log("Login attempt for username:", username);
+      
       const user = await storage.authenticateUser(username, password);
       if (!user) {
+        console.log("Authentication failed for username:", username);
         return res.status(401).json({ message: "Invalid credentials" });
       }
+      console.log("Authentication successful for user:", user.name);
       res.json(user);
     } catch (error) {
+      console.error("Authentication error:", error);
       res.status(500).json({ message: "Authentication failed" });
     }
   });

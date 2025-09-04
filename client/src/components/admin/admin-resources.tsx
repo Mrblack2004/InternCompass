@@ -81,6 +81,7 @@ export default function AdminResources() {
       });
       return;
     }
+    
     createResourceMutation.mutate(resourceForm);
   };
 
