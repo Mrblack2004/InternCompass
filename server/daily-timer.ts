@@ -45,13 +45,12 @@ export class DailyTimer {
         try {
           // Recalculate progress for each intern
           await ProgressCalculator.calculateUserProgress(intern.id);
-          
-          // Check if eligible for certificate
-          await ProgressCalculator.generateCertificateIfEligible(intern.id);
-          
-        } catch (error) {
-          console.error(`Error processing intern ${intern.name}:`, error);
+          issuedDate: new Date().toISOString(),
+          certificateUrl: null,
+          isGenerated: false,
         }
+        
+        console.log("✓ Sample data initialization completed");
       }
       
       console.log("Daily tasks completed successfully");
